@@ -1,0 +1,22 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:ital,wght@0,100..700;1,100..700&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
+
+/* Tailwind entry points */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@variant dark (&:where(.dark, .dark *));
+@import "tailwindcss";
+
+/* CSS custom properties */
+
+
+* {
+    font-family: 'Kantumruy Pro', 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    font-weight: 500;
+
+}
+
+@theme {
+    --color-primary: #3E487A;
+}
