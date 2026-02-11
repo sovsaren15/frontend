@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { request } from "../../util/request";
 import { Calendar, Save, Loader2, Search, CheckCircle, XCircle, FileText, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 // Reusable Stat Card Component
 const StatCard = ({ label, count, colorClass, icon: Icon }) => (
@@ -17,6 +18,8 @@ const StatCard = ({ label, count, colorClass, icon: Icon }) => (
 );
 
 const AttendanceTeacherPage = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
   
@@ -48,7 +51,17 @@ const AttendanceTeacherPage = () => {
       const res = await request('/classes/teacher/me', 'GET');
       const classList = res.data || res || [];
       setClasses(classList);
-      if (classList.length > 0) setSelectedClass(classList[0].id);
+      
+      if (location.state?.classId) {
+        const targetId = parseInt(location.state.classId);
+        const targetClass = classList.find(c => c.id === targetId);
+        if (targetClass) {
+          setSelectedClass(targetClass.id);
+          return;
+        }
+      }
+
+      if (classList.length > 0 && !selectedClass) setSelectedClass(classList[0].id);
     } catch (error) {
       console.error(error);
       toast.error("បរាជ័យក្នុងការទាញយកទិន្នន័យថ្នាក់");
@@ -349,6 +362,22 @@ const AttendanceTeacherPage = () => {
           </div>
         )}
       </div>
+
+      <div className="flex justify-end gap-3">
+        <button
+          onClick={() => navigate('/teacher/attendance-report')}
+          className="px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-all shadow-sm"
+        >
+          មើលរបាយការណ៍
+        </button>
+        <button
+          onClick={() => navigate(-1)}
+          className="px-6 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 font-semibold hover:bg-gray-50 transition-all shadow-sm"
+        >
+          បោះបង់
+        </button>
+      </div>
+      
     </div>
   );
 };

@@ -24,7 +24,6 @@ const DashboardPagePrincipal = () => {
       setError(null);
       const response = await request("/principals/dashboard", "GET");
       setDashboardData(response.data);
-      console.log("Fetched dashboard data:", response.data);
     } catch (err) {
       if (err.response && err.response.status === 401) {
         localStorage.removeItem('token');
@@ -42,53 +41,40 @@ const DashboardPagePrincipal = () => {
     fetchDashboardData();
   }, []);
   
-  const StatCard = ({ icon: Icon, title, value, color, gradient }) => (
-    <div className="group relative  rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden">
-      {/* Gradient Background */}
-      <div className={`absolute inset-0 ${gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-300`}></div>
-      
-      {/* Content */}
-      <div className="relative p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className={`${color} p-3 rounded-xl shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-            <Icon className="w-6 h-6 text-white" />
-          </div>
-          <div className="flex items-center gap-1 text-green-600 text-sm font-semibold">
-            <TrendingUp className="w-4 h-4" />
-            <span>Live</span>
-          </div>
+  const StatCard = ({ icon: Icon, title, value, color }) => (
+    <div className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200">
+      <div className="flex items-center justify-between mb-4">
+        <div className={`${color} p-3 rounded-lg`}>
+          <Icon className="w-5 h-5 text-white" />
         </div>
-        
-        <div>
-          <p className="text-gray-500 text-sm font-medium uppercase tracking-wider mb-2">
-            {title}
-          </p>
-          <p className="text-4xl font-bold text-gray-900 group-hover:text-transparent group-hover:bg-clip-text group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 transition-all duration-300">
-            {value || 0}
-          </p>
+        <div className="flex items-center gap-1 text-green-600 text-xs font-medium">
+          <TrendingUp className="w-3 h-3" />
+          <span>Live</span>
         </div>
       </div>
       
-      {/* Bottom accent line */}
-      <div className={`h-1 ${gradient} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left`}></div>
+      <div>
+        <p className="text-gray-600 text-sm font-medium mb-1">
+          {title}
+        </p>
+        <p className="text-3xl font-semibold text-gray-900">
+          {value || 0}
+        </p>
+      </div>
     </div>
   );
 
   const EventCard = ({ event, index }) => (
-    <div 
-      className="group  from-white to-gray-50 rounded-xl p-5 hover:shadow-lg transition-all duration-300 border border-gray-100 hover:border-blue-200"
-      style={{ animationDelay: `${index * 100}ms` }}
-    >
+    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:border-blue-300 transition-colors duration-200">
       <div className="flex items-start gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl shadow-md group-hover:scale-110 group-hover:rotate-6 transition-all duration-300">
-          <Calendar className="w-5 h-5 text-white" />
+        <div className="bg-blue-50 p-2 rounded-lg">
+          <Calendar className="w-4 h-4 text-blue-600" />
         </div>
         <div className="flex-1">
-          <h4 className="font-bold text-gray-900 text-lg group-hover:text-blue-600 transition-colors duration-200">
+          <h4 className="font-semibold text-gray-900">
             {event.title}
           </h4>
-          <p className="text-sm text-gray-600 mt-2 flex items-center gap-2">
-            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+          <p className="text-sm text-gray-500 mt-1">
             {new Date(event.date).toLocaleDateString('en-US', {
               year: 'numeric',
               month: 'long',
@@ -96,21 +82,79 @@ const DashboardPagePrincipal = () => {
             })}
           </p>
         </div>
-        <ArrowRight className="w-5 h-5 text-gray-400 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" />
+        <ArrowRight className="w-4 h-4 text-gray-400" />
       </div>
     </div>
   );
 
+  // Custom Simple Chart Components to replace Recharts
+  const SimpleBarChart = ({ data, dataKey, labelKey, color }) => {
+    const max = Math.max(...data.map(d => d[dataKey])) || 1;
+    return (
+      <div className="flex items-end justify-between h-full gap-2 pt-8 pb-2 px-2">
+        {data.map((item, i) => (
+          <div key={i} className="flex flex-col items-center justify-end h-full flex-1 group relative">
+             <div className="absolute bottom-full mb-2 opacity-0 group-hover:opacity-100 bg-gray-800 text-white text-xs rounded px-2 py-1 transition-opacity whitespace-nowrap z-10 pointer-events-none">
+               {item[labelKey]}: {item[dataKey]}
+             </div>
+             <div 
+               className={`w-full max-w-[30px] sm:max-w-[40px] rounded-t-md transition-all duration-500 ${color} hover:opacity-80`}
+               style={{ height: `${(item[dataKey] / max) * 100}%` }}
+             ></div>
+             <span className="text-[10px] sm:text-xs text-gray-500 mt-2 truncate w-full text-center">{item[labelKey]}</span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const SimpleAreaChart = ({ data, dataKey, labelKey, colorHex }) => {
+    const max = 100; 
+    const points = data.map((d, i) => {
+      const x = (i / (data.length - 1)) * 100;
+      const y = 100 - (d[dataKey] / max) * 100;
+      return `${x},${y}`;
+    }).join(' ');
+    
+    return (
+      <div className="h-full w-full relative pt-4 pb-6 px-2 flex flex-col justify-end">
+         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full overflow-visible">
+            <polygon points={`0,100 ${points} 100,100`} fill={colorHex} fillOpacity="0.1" />
+            <polyline points={points} fill="none" stroke={colorHex} strokeWidth="2" vectorEffect="non-scaling-stroke" />
+         </svg>
+         <div className="flex justify-between mt-2 text-xs text-gray-500">
+            {data.map((d, i) => <span key={i}>{d[labelKey]}</span>)}
+         </div>
+      </div>
+    );
+  };
+
+  const SimplePieChart = ({ data }) => {
+    const total = data.reduce((acc, cur) => acc + cur.value, 0);
+    const passPercentage = (data[0].value / total) * 100;
+    
+    return (
+      <div className="h-full flex items-center justify-center relative">
+         <div className="relative w-40 h-40 rounded-full overflow-hidden" style={{ background: `conic-gradient(#10B981 0% ${passPercentage}%, #EF4444 ${passPercentage}% 100%)` }}>
+           <div className="absolute inset-0 m-auto w-28 h-28 bg-white rounded-full flex items-center justify-center flex-col">
+              <span className="text-2xl font-bold text-gray-800">{data[0].value}%</span>
+              <span className="text-xs text-gray-500">ជាប់</span>
+           </div>
+         </div>
+         <div className="absolute bottom-0 right-0 flex flex-col gap-1 text-xs bg-white/80 p-2 rounded-lg backdrop-blur-sm border border-gray-100">
+            <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-emerald-500"></div><span>ជាប់</span></div>
+            <div className="flex items-center gap-1"><div className="w-2 h-2 rounded-full bg-red-500"></div><span>ធ្លាក់</span></div>
+         </div>
+      </div>
+    );
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="relative">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-blue-600 mx-auto"></div>
-            <div className="absolute inset-0 rounded-full h-16 w-16 border-4 border-transparent border-t-purple-600 animate-ping mx-auto"></div>
-          </div>
-          <p className="mt-6 text-gray-700 font-medium text-lg">Loading your dashboard...</p>
-          <p className="mt-2 text-gray-500 text-sm">Please wait a moment</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-3 border-gray-300 border-t-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600 font-medium">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -118,18 +162,16 @@ const DashboardPagePrincipal = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-orange-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full border border-red-100">
-          <div className="flex items-center gap-3 text-red-600 mb-6">
-            <div className="bg-red-100 p-3 rounded-xl">
-              <AlertCircle className="w-7 h-7" />
-            </div>
-            <h3 className="text-xl font-bold">Error Loading Dashboard</h3>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 max-w-sm w-full">
+          <div className="flex items-center gap-3 text-red-600 mb-4">
+            <AlertCircle className="w-5 h-5" />
+            <h3 className="text-lg font-semibold">Error Loading Dashboard</h3>
           </div>
-          <p className="text-gray-600 mb-6 leading-relaxed">{error}</p>
+          <p className="text-gray-600 mb-6 text-sm">{error}</p>
           <button
             onClick={fetchDashboardData}
-            className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-6 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-300 font-semibold shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-medium"
           >
             Try Again
           </button>
@@ -140,14 +182,14 @@ const DashboardPagePrincipal = () => {
 
   if (!dashboardData?.school) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-blue-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl p-10 max-w-md w-full text-center border border-gray-100">
-          <div className="bg-gradient-to-br from-gray-100 to-gray-200 p-6 rounded-2xl inline-block mb-6">
-            <School className="w-20 h-20 text-gray-400" />
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 max-w-sm w-full text-center">
+          <div className="bg-gray-100 p-4 rounded-full inline-block mb-4">
+            <School className="w-12 h-12 text-gray-400" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-3">No School Assigned</h3>
-          <p className="text-gray-600 leading-relaxed">
-            You are not currently assigned to any school. Please contact your administrator for assistance.
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No School Assigned</h3>
+          <p className="text-gray-600 text-sm">
+            Please contact your administrator for assistance.
           </p>
         </div>
       </div>
@@ -156,29 +198,48 @@ const DashboardPagePrincipal = () => {
 
   const { school, stats, recent_events } = dashboardData;
 
+  // Mock Data for Charts
+  const newStudentData = [
+    { name: 'មករា', students: 45 },
+    { name: 'កុម្ភៈ', students: 52 },
+    { name: 'មីនា', students: 38 },
+    { name: 'មេសា', students: 65 },
+    { name: 'ឧសភា', students: 48 },
+    { name: 'មិថុនា', students: 55 },
+  ];
+
+  const attendanceData = [
+    { name: 'ច័ន្ទ', present: 92 },
+    { name: 'អង្គារ', present: 95 },
+    { name: 'ពុធ', present: 88 },
+    { name: 'ព្រហស្បតិ៍', present: 94 },
+    { name: 'សុក្រ', present: 90 },
+  ];
+
+  const performanceData = [
+    { name: 'ជាប់', value: 85 },
+    { name: 'ធ្លាក់', value: 15 },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Header with Gradient */}
-      <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-purple-700 shadow-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center gap-6">
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex items-center gap-4">
             {school.logo && (
-              <div className="relative group">
-                <div className="absolute inset-0 bg-white rounded-full blur-xl opacity-50 group-hover:opacity-75 transition-opacity"></div>
-                <img 
-                  src={school.logo} 
-                  alt={school.name}
-                  className="relative w-20 h-20 rounded-full object-cover border-4 border-white shadow-2xl transform group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
+              <img 
+                src={school.logo} 
+                alt={school.name}
+                className="w-16 h-16 rounded-lg object-cover border border-gray-200"
+              />
             )}
-            <div className="flex-1">
-              <h1 className="text-4xl font-bold text-white mb-2 drop-shadow-lg">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">
                 {school.name}
               </h1>
               {school.address && (
-                <p className="text-blue-100 text-lg flex items-center gap-2">
-                  <span className="w-2 h-2 bg-blue-300 rounded-full"></span>
+                <p className="text-gray-600 text-sm">
                   {school.address}
                 </p>
               )}
@@ -188,65 +249,92 @@ const DashboardPagePrincipal = () => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Welcome Message */}
-        <div className="mb-8 animate-fade-in">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Welcome Back! 👋</h2>
+        <div className="mb-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-1">Welcome Back</h2>
           <p className="text-gray-600">Here's what's happening at your school today.</p>
         </div>
 
         {/* Statistics Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
           <StatCard
             icon={Users}
             title="Total Teachers"
             value={stats.total_teachers}
-            color="bg-gradient-to-br from-blue-500 to-blue-600"
-            gradient="bg-gradient-to-br from-blue-500 to-blue-600"
+            color="bg-blue-600"
           />
           <StatCard
             icon={GraduationCap}
             title="Total Students"
             value={stats.total_students}
-            color="bg-gradient-to-br from-green-500 to-green-600"
-            gradient="bg-gradient-to-br from-green-500 to-green-600"
+            color="bg-green-600"
           />
           <StatCard
             icon={BookOpen}
             title="Total Classes"
             value={stats.total_classes}
-            color="bg-gradient-to-br from-purple-500 to-purple-600"
-            gradient="bg-gradient-to-br from-purple-500 to-purple-600"
+            color="bg-purple-600"
           />
         </div>
 
-        {/* Recent Events */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-2">Recent Events</h2>
-              <p className="text-gray-600">Stay updated with upcoming activities</p>
-            </div>
-            <div className="bg-gradient-to-br from-blue-500 to-purple-600 p-3 rounded-xl shadow-lg">
-              <Calendar className="w-7 h-7 text-white" />
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          
+          {/* New Students Chart */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">សិស្សថ្មីប្រចាំខែ</h3>
+            <div className="h-80">
+              <SimpleBarChart data={newStudentData} dataKey="students" labelKey="name" color="bg-indigo-600" />
             </div>
           </div>
-          
-          {recent_events && recent_events.length > 0 ? (
-            <div className="space-y-4">
-              {recent_events.map((event, index) => (
-                <EventCard key={event.id} event={event} index={index} />
-              ))}
+
+          {/* Attendance Chart */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">វត្តមានសិស្សប្រចាំសប្តាហ៍</h3>
+            <div className="h-80">
+              <SimpleAreaChart data={attendanceData} dataKey="present" labelKey="name" colorHex="#10B981" />
             </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="bg-gradient-to-br from-gray-100 to-gray-200 p-6 rounded-2xl inline-block mb-4">
-                <Calendar className="w-16 h-16 text-gray-400" />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+           {/* Academic Performance */}
+           <div className="lg:col-span-1 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">លទ្ធផលសិក្សា</h3>
+              <div className="h-64">
+                <SimplePieChart data={performanceData} />
               </div>
-              <p className="text-gray-500 text-lg font-medium">No recent events found</p>
-              <p className="text-gray-400 text-sm mt-2">Check back later for updates</p>
+           </div>
+
+           {/* Recent Events */}
+           <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-lg font-semibold text-gray-900 mb-1">Recent Events</h2>
+                  <p className="text-gray-600 text-sm">Stay updated with upcoming activities</p>
+                </div>
+                <div className="bg-blue-50 p-2 rounded-lg">
+                  <Calendar className="w-5 h-5 text-blue-600" />
+                </div>
+              </div>
+              
+              {recent_events && recent_events.length > 0 ? (
+                <div className="space-y-3">
+                  {recent_events.map((event, index) => (
+                    <EventCard key={event.id} event={event} index={index} />
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="bg-gray-50 p-4 rounded-full inline-block mb-3">
+                    <Calendar className="w-8 h-8 text-gray-400" />
+                  </div>
+                  <p className="text-gray-500 font-medium">No recent events</p>
+                  <p className="text-gray-400 text-sm mt-1">Check back later for updates</p>
+                </div>
+              )}
             </div>
-          )}
         </div>
       </div>
     </div>

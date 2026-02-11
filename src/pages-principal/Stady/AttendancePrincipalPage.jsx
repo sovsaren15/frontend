@@ -9,7 +9,7 @@ import jsPDF from "jspdf";
 import autoTable from 'jspdf-autotable';
 import { useNavigate } from 'react-router-dom';
 
-const AttendanceDataTeacherPage = () => {
+const AttendancePrincipalPage = () => {
   const navigate = useNavigate();
   const [classes, setClasses] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
@@ -27,8 +27,9 @@ const AttendanceDataTeacherPage = () => {
   useEffect(() => {
     const fetchClasses = async () => {
       try {
-        const res = await request('/classes/teacher/me', 'GET');
-        const classList = res.data || res || [];
+        // Use /classes for principal to get all classes
+        const res = await request('/classes', 'GET');
+        const classList = Array.isArray(res.data) ? res.data : res.data?.data || [];
         setClasses(classList);
         if (classList.length > 0) setSelectedClass(classList[0].id);
       } catch (error) {
@@ -354,12 +355,6 @@ const AttendanceDataTeacherPage = () => {
 
       <div className="flex justify-end gap-3">
         <button
-          onClick={() => navigate('/teacher/attendance')}
-          className="px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-all shadow-sm"
-        >
-          ស្រង់វត្តមាន
-        </button>
-        <button
           onClick={() => navigate(-1)}
           className="px-6 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 font-semibold hover:bg-gray-50 transition-all shadow-sm"
         >
@@ -367,7 +362,7 @@ const AttendanceDataTeacherPage = () => {
         </button>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default AttendanceDataTeacherPage;
+export default AttendancePrincipalPage;

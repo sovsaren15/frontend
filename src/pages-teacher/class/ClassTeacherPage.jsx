@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   GraduationCap,
   BookOpen,
@@ -8,6 +8,19 @@ import {
   Clock,
   ArrowRight,
   Sparkles,
+  Filter,
+  Users,
+  ChevronRight,
+  MoreVertical,
+  Download,
+  SortAsc,
+  UserPlus,
+  Target,
+  TrendingUp,
+  Award,
+  X,
+  Eye,
+  CalendarCheck
 } from 'lucide-react';
 import { request } from "../../util/request";
 import { useNavigate } from 'react-router-dom';
@@ -17,7 +30,29 @@ const ClassTeacherPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [filterYear, setFilterYear] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
+  const [sortBy, setSortBy] = useState('name');
+  const [sortOrder, setSortOrder] = useState('asc');
   const navigate = useNavigate();
+  const filterRef = useRef(null);
+  const [activeActionId, setActiveActionId] = useState(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (filterRef.current && !filterRef.current.contains(event.target)) {
+        setShowFilters(false);
+      }
+      if (!event.target.closest('.action-menu-container')) {
+        setActiveActionId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   const fetchClasses = async () => {
     try {
@@ -35,7 +70,7 @@ const ClassTeacherPage = () => {
         localStorage.removeItem('user');
         navigate('/login');
       }
-      setError(err.message || 'Failed to load classes.');
+      setError(err.message || 'បរាជ័យក្នុងការទាញយកទិន្នន័យថ្នាក់។');
       console.error("Error fetching classes:", err);
     } finally {
       setLoading(false);
@@ -46,10 +81,7 @@ const ClassTeacherPage = () => {
     fetchClasses();
   }, []);
 
-  const filteredClasses = classes.filter(cls =>
-    cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (cls.academic_year && cls.academic_year.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  const academicYears = [...new Set(classes.map(cls => cls.academic_year).filter(Boolean))];
 
   const formatTime = (timeString) => {
     if (!timeString) return 'N/A';
@@ -65,18 +97,72 @@ const ClassTeacherPage = () => {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+    return new Date(dateString).toLocaleDateString('km-KH', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
   };
+
+  const getClassStatus = (startDate, endDate) => {
+    const today = new Date();
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    if (today < start) return 'upcoming';
+    if (today > end) return 'completed';
+    return 'ongoing';
+  };
+
+  // Helper to translate status for display
+  const getStatusLabel = (status) => {
+    switch(status) {
+      case 'upcoming': return 'នឹងចាប់ផ្តើម';
+      case 'completed': return 'បានបញ្ចប់';
+      case 'ongoing': return 'កំពុងសិក្សា';
+      default: return status;
+    }
+  };
+
+  const statusStyles = {
+    ongoing:   { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
+    upcoming:  { bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200', dot: 'bg-sky-500' },
+    completed: { bg: 'bg-slate-100', text: 'text-slate-600', border: 'border-slate-300', dot: 'bg-slate-400' },
+  };
+
+  // Filter and sort classes
+  const filteredClasses = classes
+    .filter(cls => {
+      const matchesSearch = cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (cls.academic_year && cls.academic_year.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesYear = filterYear === 'all' || cls.academic_year === filterYear;
+      return matchesSearch && matchesYear;
+    })
+    .sort((a, b) => {
+      let aValue = a[sortBy];
+      let bValue = b[sortBy];
+      
+      if (sortBy === 'name') {
+        aValue = aValue?.toLowerCase();
+        bValue = bValue?.toLowerCase();
+      }
+      
+      if (sortOrder === 'asc') {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 flex items-center justify-center p-4 font-kantumruy">
         <div className="text-center">
-          <div className="relative mb-8">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-gray-200 border-t-indigo-600 mx-auto"></div>
-            <Sparkles className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 text-indigo-600 animate-pulse" />
+          <div className="relative inline-block mb-6">
+            <div className="w-20 h-20 border-4 border-slate-200 border-t-indigo-600 rounded-full animate-spin" />
+            <Sparkles className="absolute inset-0 m-auto w-8 h-8 text-indigo-600 animate-pulse" />
           </div>
-          <p className="text-gray-600 font-medium">Loading your classes...</p>
+          <h3 className="text-xl font-bold text-slate-800 mb-2">កំពុងផ្ទុកទិន្នន័យថ្នាក់</h3>
+          <p className="text-slate-500 text-sm">សូមរង់ចាំបន្តិច...</p>
         </div>
       </div>
     );
@@ -84,117 +170,310 @@ const ClassTeacherPage = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-red-50 via-orange-50 to-yellow-50 flex items-center justify-center p-4">
-        <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full border border-red-100 text-center">
-          <div className="bg-red-100 p-4 rounded-full inline-block mb-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 flex items-center justify-center p-4 font-kantumruy">
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-red-100 p-8 max-w-md w-full text-center">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-red-100 mb-6">
             <AlertCircle className="w-8 h-8 text-red-600" />
           </div>
-          <h3 className="text-xl font-bold text-gray-900 mb-2">Unable to Load Classes</h3>
-          <p className="text-gray-600 mb-6">{error}</p>
+          <h3 className="text-2xl font-bold text-slate-900 mb-3">បញ្ហាក្នុងការតភ្ជាប់</h3>
+          <p className="text-slate-600 mb-6 leading-relaxed">{error}</p>
           <button
             onClick={fetchClasses}
-            className="bg-red-600 text-white px-6 py-3 rounded-xl font-semibold hover:bg-red-700 transition-colors shadow-lg hover:shadow-xl"
+            className="w-full bg-gradient-to-r from-red-600 to-rose-600 text-white px-6 py-3.5 rounded-xl font-semibold hover:from-red-700 hover:to-rose-700 transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
           >
-            Try Again
+            ព្យាយាមម្តងទៀត <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>
     );
   }
 
+  const stats = {
+    total: filteredClasses.length,
+    ongoing: filteredClasses.filter(cls => getClassStatus(cls.start_date, cls.end_date) === 'ongoing').length,
+    upcoming: filteredClasses.filter(cls => getClassStatus(cls.start_date, cls.end_date) === 'upcoming').length,
+    completed: filteredClasses.filter(cls => getClassStatus(cls.start_date, cls.end_date) === 'completed').length,
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header Section */}
-        <div className="bg-white rounded-3xl shadow-xl p-8 mb-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-full blur-3xl opacity-50 -mr-16 -mt-16"></div>
+    <div className="min-h-screen  from-slate-50 via-blue-50/30 to-indigo-50/40 p-4 lg:p-8 font-kantumruy">
+      <div className="max-w-7xl mx-auto space-y-6">
+
+        {/* ═══════ HEADER (ONE ROW LAYOUT) ═══════ */}
+        <div className="relative bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/80 p-6">
+          <div className="absolute inset-0 overflow-hidden rounded-3xl pointer-events-none">
+            <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-indigo-200/30 via-transparent to-transparent blur-3xl" />
+          </div>
           
-          <div className="relative flex flex-col md:flex-row justify-between items-center gap-6">
-            <div>
-              <h1 className="text-3xl font-black text-gray-900 mb-2 flex items-center gap-3">
-                <GraduationCap className="w-10 h-10 text-indigo-600" />
-                My Classes
-              </h1>
-              <p className="text-gray-600 text-lg">View and manage your assigned classes for this academic year.</p>
-            </div>
+          {/* Top Row: Title & Stats & Search */}
+          <div className="flex flex-col xl:flex-row items-center justify-between gap-6 relative z-10">
             
-            <div className="relative w-full md:w-96 group">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Search className="h-5 w-5 text-gray-400 group-focus-within:text-indigo-500 transition-colors" />
+            {/* Left: Title & Icon */}
+            <div className="flex items-center gap-4 min-w-[280px]">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-200 shrink-0">
+                <GraduationCap className="w-6 h-6 text-white" />
               </div>
+              <div>
+                <h1 className="text-2xl font-bold text-slate-900 tracking-tight">ថ្នាក់រៀនរបស់ខ្ញុំ</h1>
+                <p className="text-slate-500 text-xs mt-0.5">គ្រប់គ្រងកាលវិភាគបង្រៀន</p>
+              </div>
+            </div>
+
+            {/* Center: Search Bar (Expanded) */}
+            <div className="flex-1 w-full max-w-2xl relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
               <input
                 type="text"
-                className="block w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl leading-5 placeholder-gray-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
-                placeholder="Search by class name or year..."
+                className="w-full pl-12 pr-4 py-3 bg-white/50 border border-white/40 rounded-xl placeholder-slate-500 text-slate-800 focus:outline-none focus:bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 transition-all shadow-sm"
+                placeholder="ស្វែងរកតាមឈ្មោះថ្នាក់ ឬឆ្នាំសិក្សា..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+
+            {/* Right: Filters & Total Count */}
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="px-4 py-2.5 bg-white/60 border border-slate-200 rounded-xl shadow-sm">
+                <span className="text-sm font-bold text-indigo-700">{filteredClasses.length} ថ្នាក់</span>
+              </div>
+              
+              <div className="relative" ref={filterRef}>
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold text-sm transition-all duration-300 shadow-sm ${
+                    showFilters
+                      ? 'bg-indigo-600 text-white shadow-indigo-200'
+                      : 'bg-white text-slate-700 border border-slate-200 hover:border-indigo-300'
+                  }`}
+                >
+                  <Filter className="w-4 h-4" />
+                  <span>លក្ខខណ្ឌជ្រើសរើស</span>
+                </button>
+
+                {/* Dropdown Filters */}
+                {showFilters && (
+                  <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-xl p-4 shadow-xl z-50 animate-slideDown">
+                    <div className="text-xs font-bold text-slate-500 uppercase mb-2">ឆ្នាំសិក្សា</div>
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        onClick={() => {
+                          setFilterYear('all');
+                          setShowFilters(false);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all w-full text-left ${
+                          filterYear === 'all'
+                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                            : 'hover:bg-slate-50 text-slate-600'
+                        }`}
+                      >
+                        បង្ហាញទាំងអស់
+                      </button>
+                      {academicYears.map(year => (
+                        <button
+                          key={year}
+                          onClick={() => {
+                            setFilterYear(year);
+                            setShowFilters(false);
+                          }}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all w-full text-left ${
+                            filterYear === year
+                              ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                              : 'hover:bg-slate-50 text-slate-600'
+                          }`}
+                        >
+                          {year}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Classes Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredClasses.length > 0 ? (
-            filteredClasses.map((cls, index) => (
-              <div 
-                key={cls.id} 
-                className="group bg-white rounded-3xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-indigo-100 transform hover:-translate-y-1"
-                style={{ animation: `fadeIn 0.5s ease-out ${index * 100}ms both` }}
-              >
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="bg-indigo-50 p-3 rounded-2xl group-hover:bg-indigo-100 transition-colors duration-300">
-                      <BookOpen className="w-8 h-8 text-indigo-600" />
-                    </div>
-                    {cls.academic_year && (
-                      <span className="px-3 py-1 bg-purple-50 text-purple-700 text-xs font-bold uppercase tracking-wider rounded-full border border-purple-100">
-                        {cls.academic_year}
-                      </span>
-                    )}
-                  </div>
-                  
-                  <h3 className="text-2xl font-bold text-gray-900 mb-2 group-hover:text-indigo-600 transition-colors">
-                    {cls.name}
-                  </h3>
-                  
-                  <div className="space-y-3 mt-6">
-                    <div className="flex items-center gap-3 text-gray-600 bg-gray-50 p-3 rounded-xl">
-                      <Clock className="w-5 h-5 text-indigo-500" />
-                      <span className="text-sm font-medium">
-                        {formatTime(cls.start_time)} - {formatTime(cls.end_time)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 text-gray-600 bg-gray-50 p-3 rounded-xl">
-                      <Calendar className="w-5 h-5 text-purple-500" />
-                      <span className="text-sm font-medium">
-                        {formatDate(cls.start_date)} - {formatDate(cls.end_date)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-between items-center group-hover:bg-indigo-50/30 transition-colors cursor-pointer" onClick={() => navigate(`/teacher/classes/${cls.id}`)}>
-                  <span className="text-sm font-bold text-gray-500 group-hover:text-indigo-600 transition-colors">View Details</span>
-                  <ArrowRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-600 group-hover:translate-x-1 transition-all" />
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="col-span-full text-center py-16 bg-white rounded-3xl shadow-sm border border-gray-100">
-              <div className="bg-gray-50 rounded-full p-6 inline-block mb-4">
-                <BookOpen className="w-12 h-12 text-gray-400" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">No Classes Found</h3>
-              <p className="text-gray-500 max-w-md mx-auto">
-                {searchTerm ? `No classes match "${searchTerm}"` : "You haven't been assigned to any classes yet."}
-              </p>
+        {/* ═══════ STATS ROW ═══════ */}
+        {filteredClasses.length > 0 && (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <StatCard icon={Target}      label="សរុប"     value={stats.total}     bg="bg-white"  border="border-slate-200" text="text-slate-700"   iconBg="bg-slate-100" />
+            <StatCard icon={TrendingUp}  label="កំពុងសិក្សា"   value={stats.ongoing}   bg="bg-emerald-50/50" border="border-emerald-100" text="text-emerald-700" iconBg="bg-emerald-100" />
+            <StatCard icon={Award}       label="នឹងចាប់ផ្តើម"  value={stats.upcoming}  bg="bg-sky-50/50"     border="border-sky-100"     text="text-sky-700"     iconBg="bg-sky-100" />
+            <StatCard icon={BookOpen}    label="បានបញ្ចប់" value={stats.completed} bg="bg-slate-50/50"   border="border-slate-200"   text="text-slate-500"   iconBg="bg-slate-200" />
+          </div>
+        )}
+
+        {/* ═══════ CLASSES LIST (COMPACT ROW STYLE) ═══════ */}
+        {filteredClasses.length > 0 ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200">
+            {/* Table Header */}
+            <div className="grid grid-cols-12 gap-4 px-6 py-4 bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-500 uppercase tracking-wider rounded-t-2xl">
+              <div className="col-span-1 text-center">#</div>
+              <div className="col-span-4">ឈ្មោះថ្នាក់</div>
+              <div className="col-span-2 text-center">ឆ្នាំសិក្សា</div>
+              <div className="col-span-2">កាលវិភាគ</div>
+              <div className="col-span-2 text-center">ស្ថានភាព</div>
+              <div className="col-span-1 text-center mr-4">សកម្មភាព</div>
             </div>
-          )}
+
+            {/* Table Body */}
+            <div className="divide-y divide-slate-100">
+              {filteredClasses.map((cls, index) => {
+                const status = getClassStatus(cls.start_date, cls.end_date);
+                const style = statusStyles[status] || statusStyles.completed;
+                
+                return (
+                  <div 
+                    key={cls.id}
+                    className={`grid grid-cols-12 gap-4 px-6 py-4 items-center hover:bg-slate-50/80 transition-colors group ${activeActionId === cls.id ? 'relative z-20' : ''}`}
+                  >
+                    {/* No */}
+                    <div className="col-span-1 text-center text-sm font-medium text-slate-400">
+                      {index + 1}
+                    </div>
+
+                    {/* Class Name */}
+                    <div className="col-span-4 flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center text-indigo-600 shrink-0">
+                        <BookOpen size={20} />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-slate-900 text-sm group-hover:text-indigo-600 transition-colors line-clamp-1">
+                          {cls.name}
+                        </h4>
+                        <p className="text-xs text-slate-500 md:hidden">{cls.academic_year}</p>
+                      </div>
+                    </div>
+
+                    {/* Academic Year */}
+                    <div className="col-span-2 text-center">
+                      <span className="inline-flex px-2.5 py-1 rounded-md text-xs font-semibold bg-slate-100 text-slate-600">
+                        {cls.academic_year || 'N/A'}
+                      </span>
+                    </div>
+
+                    {/* Schedule */}
+                    <div className="col-span-2">
+                      <div className="flex flex-col text-xs text-slate-600">
+                        <span className="font-medium flex items-center gap-1.5">
+                          <Clock size={12} className="text-slate-400"/>
+                          {formatTime(cls.start_time)} - {formatTime(cls.end_time)}
+                        </span>
+                        <span className="text-slate-400 mt-0.5">
+                          {formatDate(cls.start_date)} - {formatDate(cls.end_date)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Status */}
+                    <div className="col-span-2 text-center">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border ${style.border} ${style.bg} ${style.text}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${style.dot}`} />
+                        {getStatusLabel(status)}
+                      </span>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="col-span-1 flex justify-center relative mr-9 action-menu-container">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveActionId(activeActionId === cls.id ? null : cls.id);
+                        }}
+                        className={`p-2 rounded-lg transition-colors ${activeActionId === cls.id ? 'bg-indigo-50 text-indigo-600' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                      >
+                        <MoreVertical size={20} />
+                      </button>
+
+                      {activeActionId === cls.id && (
+                        <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-xl shadow-xl border border-slate-100 z-50 overflow-hidden animate-slideDown origin-top-right">
+                          <button
+                            onClick={() => navigate(`/teacher/classes/${cls.id}`, { state: { openAddStudent: true } })}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-600 hover:bg-slate-50 hover:text-emerald-600 transition-colors text-left"
+                          >
+                            <UserPlus size={16} />
+                            បន្ថែមសិស្ស
+                          </button>
+                          <button
+                            onClick={() => navigate('/teacher/attendance', { state: { classId: cls.id } })}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-600 hover:bg-slate-50 hover:text-orange-600 transition-colors text-left"
+                          >
+                            <CalendarCheck size={16} />
+                            ស្រង់វត្តមាន
+                          </button>
+                          <button
+                            onClick={() => navigate(`/teacher/classes/${cls.id}`)}
+                            className="w-full flex items-center gap-3 px-4 py-3 text-sm text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-colors text-left"
+                          >
+                            <Eye size={16} />
+                            មើលលម្អិត
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          /* ═══════ EMPTY STATE ═══════ */
+          <div className="bg-white rounded-3xl border border-slate-200 p-12 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-slate-50 mb-4">
+              <BookOpen className="w-8 h-8 text-slate-300" />
+            </div>
+            <h3 className="text-lg font-bold text-slate-900 mb-2">
+              {searchTerm || filterYear !== 'all' ? 'រកមិនឃើញថ្នាក់' : 'មិនមានថ្នាក់ត្រូវបានចាត់តាំង'}
+            </h3>
+            <p className="text-slate-500 text-sm max-w-xs mx-auto mb-6">
+              {searchTerm 
+                ? `រកមិនឃើញថ្នាក់ដែលត្រូវនឹង "${searchTerm}"។`
+                : "អ្នកមិនទាន់ត្រូវបានចាត់តាំងឱ្យបង្រៀនថ្នាក់ណាមួយនៅឡើយទេ។"
+              }
+            </p>
+            <button
+              onClick={() => { setSearchTerm(''); setFilterYear('all'); fetchClasses(); }}
+              className="px-5 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-all shadow-sm"
+            >
+              ផ្ទុកទិន្នន័យឡើងវិញ
+            </button>
+          </div>
+        )}
+
+        <div className="flex justify-end">
+          <button
+            onClick={() => navigate(-1)}
+            className="px-6 py-2.5 rounded-xl border border-red-600 bg-red-600 text-white font-semibold hover:bg-red-700 transition-all shadow-sm"
+          >
+            បោះបង់
+          </button>
         </div>
       </div>
+
+      <style>{`
+        @keyframes slideDown {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slideDown { animation: slideDown 0.2s ease-out forwards; }
+      `}</style>
     </div>
   );
 };
+
+/* ══════════ SIMPLE STAT CARD ══════════ */
+function StatCard({ icon: Icon, label, value, bg, border, text, iconBg }) {
+  return (
+    <div className={`bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex items-center gap-4`}>
+      <div className={`${iconBg} w-10 h-10 rounded-lg flex items-center justify-center shrink-0`}>
+        <Icon className={`w-5 h-5 ${text}`} />
+      </div>
+      <div>
+        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wide">{label}</p>
+        <p className="text-xl font-bold text-slate-800">{value}</p>
+      </div>
+    </div>
+    
+  );
+}
 
 export default ClassTeacherPage;

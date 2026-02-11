@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
-  Save, X, Calendar as CalendarIcon, Clock, Book, Plus, Trash2, AlertCircle 
+  Save, X, Calendar as CalendarIcon, Clock, Book, Plus, Trash2, AlertCircle, ArrowLeft, GraduationCap, ChevronDown
 } from 'lucide-react';
 import { request } from "./../../util/request";
 
@@ -19,12 +19,23 @@ const CreateClassPrincipalPage = () => {
 
   const [schedules, setSchedules] = useState([]);
   const [subjects, setSubjects] = useState([]);
-  const [teachers, setTeachers] = useState([]); // teachers with id (internal PK) and user_id
+  const [teachers, setTeachers] = useState([]); 
   const [schoolId, setSchoolId] = useState(null);
   
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState(null);
+
+  // Khmer Days Mapping for Display
+  const daysOfWeek = [
+    { value: 'Monday', label: 'ច័ន្ទ' },
+    { value: 'Tuesday', label: 'អង្គារ' },
+    { value: 'Wednesday', label: 'ពុធ' },
+    { value: 'Thursday', label: 'ព្រហស្បតិ៍' },
+    { value: 'Friday', label: 'សុក្រ' },
+    { value: 'Saturday', label: 'សៅរ៍' },
+    { value: 'Sunday', label: 'អាទិត្យ' }
+  ];
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -32,19 +43,17 @@ const CreateClassPrincipalPage = () => {
         setLoading(true);
         setError(null);
 
-        // 1. Get current principal's school
         const principalRes = await request('/principals/me', 'GET');
         const currentSchoolId = principalRes.data?.school_id || principalRes.data?.data?.school_id;
 
         if (!currentSchoolId) {
-          throw new Error("Could not determine your school. Please contact support.");
+          throw new Error("មិនអាចកំណត់សាលារបស់អ្នកបានទេ។ សូមទាក់ទងជំនួយ។");
         }
         
         setSchoolId(currentSchoolId);
 
-        // 2. Load subjects & teachers of this school (using school-specific endpoints)
         const [subjectsRes, teachersRes] = await Promise.all([
-          request(`/subjects/school/${currentSchoolId}`, 'GET'), // Use school-specific endpoint
+          request(`/subjects/school/${currentSchoolId}`, 'GET'), 
           request(`/teachers/school/${currentSchoolId}`, 'GET')
         ]);
 
@@ -57,7 +66,7 @@ const CreateClassPrincipalPage = () => {
           err.response?.data?.error?.message || 
           err.response?.data?.message || 
           err.message || 
-          "Failed to load required data. Please check your connection and try again."
+          "បរាជ័យក្នុងការទាញយកទិន្នន័យ។ សូមពិនិត្យមើលការតភ្ជាប់របស់អ្នក ហើយព្យាយាមម្តងទៀត។"
         );
       } finally {
         setLoading(false);
@@ -84,7 +93,7 @@ const CreateClassPrincipalPage = () => {
   const addSchedule = () => {
     setSchedules(prev => [...prev, {
       subject_id: '',
-      teacher_id: '',           // ← will be teachers.id (internal PK)
+      teacher_id: '', 
       day_of_week: 'Monday',
       start_time: '',
       end_time: ''
@@ -109,38 +118,41 @@ const CreateClassPrincipalPage = () => {
     setSubmitting(true);
     setError(null);
 
-    // Basic validation
-    if (!formData.name.trim() || !formData.academic_year.trim()) {
-      setError("Class name and academic year are required.");
+    if (!schoolId) {
+      setError("បាត់ព័ត៌មានសាលារៀន។ សូមព្យាយាមផ្ទុកទំព័រឡើងវិញ។");
       setSubmitting(false);
       return;
     }
 
-    // Check class time range
+    if (!formData.name.trim() || !formData.academic_year.trim()) {
+      setError("ឈ្មោះថ្នាក់ និងឆ្នាំសិក្សា ត្រូវបានទាមទារ។");
+      setSubmitting(false);
+      return;
+    }
+
     if (formData.start_time && formData.end_time && 
         !validateTimes(formData.start_time, formData.end_time)) {
-      setError("Class end time must be after start time.");
+      setError("ម៉ោងបញ្ចប់ថ្នាក់ត្រូវតែនៅក្រោយម៉ោងចាប់ផ្តើម។");
       setSubmitting(false);
       return;
     }
 
-    // Check all schedules
     for (const s of schedules) {
       if (!s.subject_id || !s.teacher_id || !s.start_time || !s.end_time) {
-        setError("All schedule entries must have subject, teacher, start and end time.");
+        setError("រាល់ការបញ្ចូលកាលវិភាគត្រូវតែមានមុខវិជ្ជា, គ្រូ, ម៉ោងចាប់ផ្តើម និងម៉ោងបញ្ចប់។");
         setSubmitting(false);
         return;
       }
       if (!validateTimes(s.start_time, s.end_time)) {
-        setError("In one or more schedules, end time is before or equal to start time.");
+        setError("នៅក្នុងកាលវិភាគមួយ ឬច្រើន ម៉ោងបញ្ចប់គឺមុន ឬស្មើនឹងម៉ោងចាប់ផ្តើម។");
         setSubmitting(false);
         return;
       }
     }
 
     try {
-      // Step 1: Create the class
       const classPayload = {
+        school_id: schoolId,
         name: formData.name.trim(),
         academic_year: formData.academic_year.trim(),
         start_date: formData.start_date || null,
@@ -151,21 +163,19 @@ const CreateClassPrincipalPage = () => {
 
       const classResponse = await request('/classes', 'POST', classPayload);
       
-      // Adjust according to your actual response structure
       const newClassId = classResponse.data?.id || 
-                        classResponse.data?.data?.id || 
-                        classResponse.data?.class_id;
+                         classResponse.data?.data?.id || 
+                         classResponse.data?.class_id;
 
       if (!newClassId) {
-        throw new Error("Failed to get new class ID from server response");
+        throw new Error("បរាជ័យក្នុងការទទួលបានលេខសម្គាល់ថ្នាក់ថ្មីពីម៉ាស៊ីនមេ");
       }
 
-      // Step 2: Create schedules if any
       if (schedules.length > 0) {
         const schedulePromises = schedules.map(async (s) => {
           const schedulePayload = {
             class_id: newClassId,
-            teacher_id: parseInt(s.teacher_id, 10),      // ← teachers.id (internal PK)
+            teacher_id: parseInt(s.teacher_id, 10),
             subject_id: parseInt(s.subject_id, 10),
             day_of_week: s.day_of_week,
             start_time: s.start_time.includes(':00') ? s.start_time : `${s.start_time}:00`,
@@ -178,18 +188,16 @@ const CreateClassPrincipalPage = () => {
         await Promise.all(schedulePromises);
       }
 
-      // Success!
       navigate('/principal/classes', { 
-        state: { message: 'Class created successfully!' } 
+        state: { message: 'ថ្នាក់ត្រូវបានបង្កើតដោយជោគជ័យ!' } 
       });
 
     } catch (err) {
       console.error("Class creation failed:", err);
-      console.error("Error details:", err.response?.data);
       const errorMessage = err.response?.data?.error?.message || 
-                          err.response?.data?.message || 
-                          err.message || 
-                          "Failed to create class. Please check all fields and try again.";
+                           err.response?.data?.message || 
+                           err.message || 
+                           "បរាជ័យក្នុងការបង្កើតថ្នាក់។ សូមពិនិត្យមើលគ្រប់ចន្លោះ ហើយព្យាយាមម្តងទៀត។";
       setError(errorMessage);
     } finally {
       setSubmitting(false);
@@ -199,204 +207,239 @@ const CreateClassPrincipalPage = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Create New Class</h1>
-        <p className="text-gray-600 mb-8">Set up a new class and assign weekly schedule</p>
+    <div className="p-6 bg-gray-50/50 min-h-screen font-kantumruy">
+      <div className=" mx-auto">
+        
+        {/* Header */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3.5 bg-indigo-50 rounded-xl text-indigo-600">
+                <GraduationCap size={28} />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  បង្កើតថ្នាក់ថ្មី
+                </h1>
+                <p className="text-gray-500 mt-1">រៀបចំថ្នាក់ថ្មី និងកំណត់កាលវិភាគប្រចាំសប្តាហ៍</p>
+              </div>
+            </div>
+          </div>
+        </div>
 
         {error && (
-          <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 text-red-700 flex items-center gap-3">
+          <div className="mb-6 bg-red-50 border-l-4 border-red-500 p-4 text-red-700 flex items-center gap-3 rounded-r-xl shadow-sm">
             <AlertCircle size={20} />
             <span>{error}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-8">
-          {/* ── Class Information ── */}
-          <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-100">
-            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-              <Book className="text-blue-600" size={20} />
-              Class Information
+          
+          {/* Class Information Card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center gap-2 pb-4 border-b border-gray-100">
+              <Book className="text-indigo-600" size={24} />
+              ព័ត៌មានថ្នាក់
             </h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Class Name *</label>
+                <label className="block text-sm font-bold text-gray-700 mb-2">ឈ្មោះថ្នាក់ <span className="text-red-500">*</span></label>
                 <input
                   type="text"
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="e.g. Grade 7A"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholder="ឧទាហរណ៍៖ ថ្នាក់ទី ៧ក"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Academic Year *</label>
-                <input
-                  type="text"
-                  name="academic_year"
-                  value={formData.academic_year}
-                  onChange={handleChange}
-                  placeholder="e.g. 2025-2026"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  required
-                />
+                <label className="block text-sm font-bold text-gray-700 mb-2">ឆ្នាំសិក្សា <span className="text-red-500">*</span></label>
+                <div className="relative">
+                  <select
+                    name="academic_year"
+                    value={formData.academic_year}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all appearance-none bg-white"
+                    required
+                  >
+                    <option value="">ជ្រើសរើសឆ្នាំសិក្សា</option>
+                    {Array.from({ length: 5 }, (_, i) => {
+                      const year = new Date().getFullYear() - 1 + i;
+                      return <option key={year} value={`${year}-${year + 1}`}>{year}-{year + 1}</option>;
+                    })}
+                  </select>
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                <input
-                  type="date"
-                  name="start_date"
-                  value={formData.start_date}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
+                <label className="block text-sm font-bold text-gray-700 mb-2">កាលបរិច្ឆេទចាប់ផ្តើម</label>
+                <div className="relative">
+                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type="date"
+                    name="start_date"
+                    value={formData.start_date}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
+                  />
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                <input
-                  type="date"
-                  name="end_date"
-                  value={formData.end_date}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
+                <label className="block text-sm font-bold text-gray-700 mb-2">កាលបរិច្ឆេទបញ្ចប់</label>
+                <div className="relative">
+                  <CalendarIcon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type="date"
+                    name="end_date"
+                    value={formData.end_date}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
+                  />
+                </div>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Class Start Time</label>
-                <input
-                  type="time"
-                  name="start_time"
-                  value={formData.start_time}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
+                <label className="block text-sm font-bold text-gray-700 mb-2">ម៉ោងចូលរៀន</label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type="time"
+                    name="start_time"
+                    value={formData.start_time}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
+                  />
+                </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Class End Time</label>
-                <input
-                  type="time"
-                  name="end_time"
-                  value={formData.end_time}
-                  onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-                />
+                <label className="block text-sm font-bold text-gray-700 mb-2">ម៉ោងចេញ</label>
+                <div className="relative">
+                  <Clock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                  <input
+                    type="time"
+                    name="end_time"
+                    value={formData.end_time}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-gray-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all"
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* ── Weekly Schedule ── */}
-          <div className="bg-white rounded-xl shadow-sm p-8 border border-gray-100">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold flex items-center gap-2">
-                <Clock className="text-blue-600" size={20} />
-                Weekly Schedule
+          {/* Weekly Schedule Card */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+            <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                <Clock className="text-indigo-600" size={24} />
+                កាលវិភាគប្រចាំសប្តាហ៍
               </h2>
               <button
                 type="button"
                 onClick={addSchedule}
-                className="bg-blue-600 text-white px-5 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700 transition"
+                className="bg-indigo-50 text-indigo-600 px-5 py-2.5 rounded-xl flex items-center gap-2 hover:bg-indigo-100 transition font-medium border border-indigo-100"
               >
-                <Plus size={18} /> Add Slot
+                <Plus size={18} /> បន្ថែមម៉ោង
               </button>
             </div>
 
             {schedules.length === 0 ? (
-              <div className="text-center py-12 text-gray-500 bg-gray-50 rounded-lg border border-dashed">
-                No schedule entries yet. Click "Add Slot" to begin.
+              <div className="text-center py-16 bg-gray-50/50 rounded-2xl border-2 border-dashed border-gray-200">
+                <div className="p-4 bg-white rounded-full inline-flex mb-3 shadow-sm">
+                   <CalendarIcon className="text-gray-400" size={32} />
+                </div>
+                <p className="text-gray-500 font-medium">មិនទាន់មានកាលវិភាគនៅឡើយទេ។</p>
+                <p className="text-gray-400 text-sm mt-1">ចុច "បន្ថែមម៉ោង" ដើម្បីចាប់ផ្តើមរៀបចំ។</p>
               </div>
             ) : (
-              <div className="space-y-5">
+              <div className="space-y-4">
                 {schedules.map((schedule, index) => (
                   <div 
                     key={index}
-                    className="grid grid-cols-1 md:grid-cols-12 gap-4 p-5 bg-gray-50 border rounded-xl relative"
+                    className="grid grid-cols-1 lg:grid-cols-12 gap-4 p-6 bg-gray-50 border border-gray-200 rounded-2xl relative group hover:border-indigo-200 hover:shadow-sm transition-all"
                   >
-                    <div className="md:col-span-3">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Subject *</label>
+                    <div className="lg:col-span-3">
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">មុខវិជ្ជា *</label>
                       <select
                         name="subject_id"
                         value={schedule.subject_id}
                         onChange={(e) => handleScheduleChange(index, e)}
-                        className="w-full p-2.5 border border-gray-300 rounded-lg"
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                         required
                       >
-                        <option value="">Select subject</option>
+                        <option value="">ជ្រើសរើសមុខវិជ្ជា</option>
                         {subjects.map(s => (
                           <option key={s.id} value={s.id}>{s.name}</option>
                         ))}
                       </select>
                     </div>
 
-                    <div className="md:col-span-3">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Teacher *</label>
+                    <div className="lg:col-span-3">
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">គ្រូបង្រៀន *</label>
                       <select
                         name="teacher_id"
                         value={schedule.teacher_id}
                         onChange={(e) => handleScheduleChange(index, e)}
-                        className="w-full p-2.5 border border-gray-300 rounded-lg"
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                         required
                       >
-                        <option value="">Select teacher</option>
+                        <option value="">ជ្រើសរើសគ្រូ</option>
                         {teachers.map(t => (
-                          <option 
-                            key={t.id} 
-                            value={t.id}           // ← IMPORTANT: use t.id (teachers table PK)
-                          >
+                          <option key={t.id} value={t.id}>
                             {t.first_name} {t.last_name}
                           </option>
                         ))}
                       </select>
                     </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Day</label>
+                    <div className="lg:col-span-2">
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">ថ្ងៃ</label>
                       <select
                         name="day_of_week"
                         value={schedule.day_of_week}
                         onChange={(e) => handleScheduleChange(index, e)}
-                        className="w-full p-2.5 border border-gray-300 rounded-lg"
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                       >
-                        {['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday']
-                          .map(day => <option key={day} value={day}>{day}</option>)}
+                        {daysOfWeek.map(day => <option key={day.value} value={day.value}>{day.label}</option>)}
                       </select>
                     </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Start *</label>
+                    <div className="lg:col-span-2">
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">ចាប់ផ្តើម *</label>
                       <input
                         type="time"
                         name="start_time"
                         value={schedule.start_time}
                         onChange={(e) => handleScheduleChange(index, e)}
-                        className="w-full p-2.5 border border-gray-300 rounded-lg"
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                         required
                       />
                     </div>
 
-                    <div className="md:col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">End *</label>
+                    <div className="lg:col-span-2">
+                      <label className="block text-xs font-bold text-gray-500 uppercase mb-1.5">បញ្ចប់ *</label>
                       <input
                         type="time"
                         name="end_time"
                         value={schedule.end_time}
                         onChange={(e) => handleScheduleChange(index, e)}
-                        className="w-full p-2.5 border border-gray-300 rounded-lg"
+                        className="w-full px-3 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white"
                         required
                       />
                     </div>
@@ -404,9 +447,9 @@ const CreateClassPrincipalPage = () => {
                     <button
                       type="button"
                       onClick={() => removeSchedule(index)}
-                      className="absolute -top-3 -right-3 bg-white border border-red-300 text-red-600 p-2 rounded-full hover:bg-red-50 shadow-sm"
+                      className="absolute -top-3 -right-3 bg-white border border-gray-200 text-gray-400 p-1.5 rounded-full hover:bg-red-50 hover:text-red-500 hover:border-red-200 shadow-sm transition-colors"
                     >
-                      <Trash2 size={18} />
+                      <Trash2 size={16} />
                     </button>
                   </div>
                 ))}
@@ -415,24 +458,24 @@ const CreateClassPrincipalPage = () => {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end gap-4 pt-6">
+          <div className="flex justify-end gap-4 pt-6 pb-12">
             <button
               type="button"
               onClick={() => navigate('/principal/classes')}
-              className="px-8 py-3 border border-gray-300 rounded-xl text-gray-700 hover:bg-gray-50 transition"
+              className="px-8 py-3 rounded-xl border border-gray-300 text-gray-700 font-bold hover:bg-white hover:border-gray-400 hover:shadow-sm transition-all disabled:opacity-50"
               disabled={submitting}
             >
-              Cancel
+              បោះបង់
             </button>
             
             <button
               type="submit"
               disabled={submitting || loading}
-              className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition disabled:opacity-60 flex items-center gap-2 shadow-md"
+              className="px-8 py-3 rounded-xl bg-indigo-600 text-white font-bold hover:bg-indigo-700 hover:shadow-lg hover:shadow-indigo-200 transition-all disabled:opacity-60 flex items-center gap-2"
             >
-              {submitting ? 'Creating...' : (
+              {submitting ? 'កំពុងបង្កើត...' : (
                 <>
-                  <Save size={18} /> Create Class
+                  <Save size={20} /> បង្កើតថ្នាក់
                 </>
               )}
             </button>

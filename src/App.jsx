@@ -1,6 +1,10 @@
 import { Outlet, Route, Routes } from "react-router-dom";
 
 //teacher 
+import ProfileTeacherChangePassword from "./pages-teacher/profile/ProfileTeacherChangePassword.jsx";
+import ProfileDetailViewTeacher from "./pages-teacher/profile/ProfileDetailViewTeacher.jsx";
+import CreateSudentTeacherPages from "./pages-teacher/student/CreateSudentTeacherPages.jsx";
+import StudentTeacherPages from "./pages-teacher/student/StudentTeacherPages.jsx";
 import ScoreTeacherPage from "./pages-teacher/score/ScoreTeacherPage.jsx";
 import ScoreReportTeacherPage from "./pages-teacher/score/ScoreReportTeacherPage.jsx";
 import AttendanceTeacherPage from "./pages-teacher/attendance/AttendanceTeacherPage.jsx";
@@ -10,20 +14,27 @@ import DashboardPageTeacher from "./pages-teacher/DashboardPageTeacher";
 import MainLayoutTeacher from "./component/layout/MainLayoutTeacher";
 import ClassDetailViewTeacherPage from "./pages-teacher/class/ClassDetailViewTeacherPage";
 import AttendanceDataTeacherPage from "./pages-teacher/attendance/AttendanceDataTeacherPage.jsx";
+import StudentDetailViewTeacher from "./pages-teacher/student/StudentDetailViewTeacher.jsx";
 
-//principal subject
+//principal
+import TeacherDetailViewPrincipal from "./pages-principal/teacher/TeacherDetailViewPrincipal.jsx";
+import EventViewdetailPrincipalPage from "./pages-principal/event/EventViewdetailPrincipalPage.jsx";
+import CreateSudentPrincipalPages from "./pages-principal/student/CreateSudentPrincipalPages.jsx";
+import StudentDetailViewPrincipal from "./pages-principal/student/StudentDetailViewPrincipal.jsx";
+import StudentPrincipalPages from "./pages-principal/student/StudentPrincipalPages.jsx";
+import AttendancePrincipalPage from "./pages-principal/Stady/AttendancePrincipalPage.jsx";
+import ResultPrincipalPage from "./pages-principal/Stady/ResultPrincipalPage.jsx";
+import EventPrincipalPage from "./pages-principal/event/EventPrincipalPage.jsx";
+import CreateEventPrincipalPage from "./pages-principal/event/CreateEventPrincipalPage.jsx";
 import CreateSubjectPagePrincipal from "./pages-principal/subject/CreateSubjectPagePrincipal.jsx";
 import SubjectPagePrincipal from "./pages-principal/subject/SubjectPagePrincipal.jsx";
-//principal class
 import UpdateClassPrincipalPage from "./pages-principal/class/UpdateClassPrincipalPage";
 import CreateClassPrincipalPage from "./pages-principal/class/CreateClassPrincipalPage";
 import ClassPrincipalPage from "./pages-principal/class/ClassPrincipalPage";
 import ClassDetailViewPrincipalPage from "./pages-principal/class/ClassDetailViewPrincipalPage";
-
-// principal teacher---------------
 import TeacherPrincipalPage from "./pages-principal/teacher/TeacherPrincipalPage";
 import CreateTeacherPrincipalPage from "./pages-principal/teacher/CreateTeacherPrincipalPage";
-//Principal---------------
+import SchoolPrincipalPage from "./pages-principal/school/SchoolPrincipalPage";
 import DashboardPagePrincipal from "./pages-principal/dashboard/DashboardPagePrincipal";
 
 //Principal admin---------------
@@ -84,10 +95,22 @@ const App = () => {
         {/* Principal Routes */}
         <Route element={<ProtectedRoute><MainLayoutPrincipal /></ProtectedRoute>} path="/principal">
           <Route path="dashboard" element={<DashboardPagePrincipal />} />
+          <Route path="schools" element={<SchoolPrincipalPage />} />
           <Route path="teachers" element={<TeacherPrincipalPage />} />
           <Route path="teachers/create" element={<CreateTeacherPrincipalPage />} />
           <Route path="subjects/create" element={<CreateSubjectPagePrincipal />} />
           <Route path="subjects" element={<SubjectPagePrincipal />} />
+          <Route path="events" element={<EventPrincipalPage />} />
+          <Route path="events/create" element={<CreateEventPrincipalPage />} />
+          <Route path="events/viewdetail/:eventId" element={<EventViewdetailPrincipalPage />} />
+          <Route path="results" element={<ResultPrincipalPage />} />
+          <Route path="attendance" element={<AttendancePrincipalPage />} />
+          <Route path="teachers/:teacherId" element={<TeacherDetailViewPrincipal />} />
+
+          {/* Student Routes */}
+          <Route path="students" element={<StudentPrincipalPages />} />
+          <Route path="students/create" element={<CreateSudentPrincipalPages />} />
+          <Route path="students/:studentId" element={<StudentDetailViewPrincipal />} />
 
           {/**class routes */}
           <Route path="classes" element={<ClassPrincipalPage />} />
@@ -106,6 +129,11 @@ const App = () => {
           <Route path="scores" element={<ScoreTeacherPage />} />
           <Route path="score-report" element={<ScoreReportTeacherPage />} />
           <Route path="results" element={<ResultTeacherPage />} />
+          <Route path="students" element={<StudentTeacherPages />} />
+          <Route path="students/:studentId" element={<StudentDetailViewTeacher />} />
+          <Route path="students/create" element={<CreateSudentTeacherPages />} />
+          <Route path="profile" element={<ProfileDetailViewTeacher />} />
+          <Route path="change-password" element={<ProfileTeacherChangePassword />} />
           {/* Add more teacher-specific routes here */}
         </Route>
 
