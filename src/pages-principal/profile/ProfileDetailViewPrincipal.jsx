@@ -28,10 +28,10 @@ const getImageUrl = (imagePath) => {
   const relativePath = normalizedPath.includes("uploads/")
     ? normalizedPath.substring(normalizedPath.indexOf("uploads/"))
     : normalizedPath;
-  return `http://localhost/primary_school_attendance/${relativePath}`;
+  return `http://localhost:8081/${relativePath}`;
 };
 
-const ProfileDetailViewTeacher = () => {
+const ProfileDetailViewPrincipal = () => {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -55,7 +55,7 @@ const ProfileDetailViewTeacher = () => {
   const fetchProfile = async () => {
     try {
       setLoading(true);
-      const res = await request("/teachers/me", "GET");
+      const res = await request("/principals/me", "GET");
       const data = res.data || res;
       setProfile(data);
       setFormData({
@@ -106,13 +106,12 @@ const ProfileDetailViewTeacher = () => {
       data.append("date_of_birth", formData.date_of_birth);
       data.append("sex", formData.sex);
       data.append("experience", formData.experience);
-      data.append("status", formData.status);
 
       if (selectedFile) {
         data.append("image_profile", selectedFile);
       }
 
-      await request("/teachers/me", "PUT", data);
+      await request("/principals/me", "PUT", data);
       toast.success("កែប្រែព័ត៌មានជោគជ័យ");
       setIsEditing(false);
       setSelectedFile(null);
@@ -223,7 +222,7 @@ const ProfileDetailViewTeacher = () => {
               ប្រវត្តិរូបផ្ទាល់ខ្លួន
             </h1>
             <p className="text-gray-500 mt-1 ml-1">
-              គ្រប់គ្រងព័ត៌មាន និងគណនីគ្រូបង្រៀនរបស់អ្នក
+              គ្រប់គ្រងព័ត៌មាន និងគណនីនាយករបស់អ្នក
             </p>
           </div>
 
@@ -290,7 +289,7 @@ const ProfileDetailViewTeacher = () => {
                         alt="Profile"
                         className="w-full h-full object-cover"
                         onError={(e) => {
-                          e.target.src = `https://ui-avatars.com/api/?name=Teacher&background=random`;
+                          e.target.src = `https://ui-avatars.com/api/?name=Principal&background=random`;
                         }}
                       />
                     )}
@@ -319,7 +318,7 @@ const ProfileDetailViewTeacher = () => {
 
               <div className="flex justify-center gap-2 mb-6">
                 <span className="px-3 py-1 bg-indigo-50 text-indigo-700 rounded-full text-xs font-bold border border-indigo-100">
-                  គ្រូបង្រៀន
+                  នាយកសាលា
                 </span>
                 <span
                   className={`px-3 py-1 rounded-full text-xs font-bold border flex items-center gap-1 ${formData.status === "active" ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-red-50 text-red-700 border-red-100"}`}
@@ -504,4 +503,4 @@ const ProfileDetailViewTeacher = () => {
   );
 };
 
-export default ProfileDetailViewTeacher;
+export default ProfileDetailViewPrincipal;

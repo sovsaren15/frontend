@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Save, Loader2, X, Image as ImageIcon, MapPin, Map } from 'lucide-react';
+import { Calendar, Save, Loader2, X, Image as ImageIcon, MapPin, Map, ArrowLeft } from 'lucide-react';
 import { request } from '../../util/request';
 import toast from 'react-hot-toast';
 
@@ -109,14 +109,23 @@ const CreateEventPrincipalPage = () => {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3.5 bg-blue-50 rounded-xl">
-              <Calendar className="text-blue-600" size={28} />
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3.5 bg-blue-50 rounded-xl">
+                <Calendar className="text-blue-600" size={28} />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Create New Event</h1>
+                <p className="text-gray-600 mt-1.5">Schedule a new event for your school.</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Create New Event</h1>
-              <p className="text-gray-600 mt-1.5">Schedule a new event for your school.</p>
-            </div>
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2.5 rounded-xl font-semibold transition-all"
+            >
+              <ArrowLeft size={20} />
+              <span>ត្រឡប់ក្រោយ</span>
+            </button>
           </div>
         </div>
 

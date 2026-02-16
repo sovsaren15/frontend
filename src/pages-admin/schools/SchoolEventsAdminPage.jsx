@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Search, ChevronDown, Plus, Calendar, MapPin } from 'lucide-react';
+import { Search, ChevronDown, Plus, Calendar, MapPin, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 const SchoolEventsAdminPage = () => {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState('newest'); // 'newest' or 'oldest'
@@ -45,14 +47,33 @@ const SchoolEventsAdminPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-6 space-y-6">
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-semibold text-gray-800">ព្រឹត្តិការណ៍សាលា</h1>
-      </div>
+      <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+              <span className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                <Calendar className="w-6 h-6" />
+              </span>
+              គ្រប់គ្រងព្រឹត្តិការណ៍
+            </h1>
+            <p className="text-gray-500 mt-1 ml-11">
+              រៀបចំនិងកំណត់កាលវិភាគសកម្មភាពសាលា
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2.5 rounded-xl font-semibold transition-all"
+            >
+              <ArrowLeft size={20} />
+              <span>ត្រឡប់ក្រោយ</span>
+            </button>
+          </div>
+        </div>
 
       {/* Search and Filter Bar */}
-      <div className="bg-white rounded-2xl shadow-sm  p-6 mb-6">
+      <div className="bg-white rounded-2xl shadow-sm  p-6">
         <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
           {/* Search Input */}
           <div className="relative flex-1 w-full md:max-w-md">

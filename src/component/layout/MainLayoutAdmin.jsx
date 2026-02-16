@@ -192,26 +192,6 @@ const MainLayoutAdmin = () => {
           </div>
         </nav>
 
-        {/* Footer */}
-        <div className="mt-auto p-4 space-y-2">
-          <button
-            onClick={() => handleNavigation('/settings')}
-            className={`w-full flex items-center ${isExpanded ? "gap-4 px-6" : "justify-center px-2"} py-4 text-gray-700 hover:bg-white hover:shadow-sm rounded-2xl transition-all duration-200`}
-            title="ការកំណត់"
-          >
-            <Settings size={24} className="shrink-0" />
-            {isExpanded && <span className="text-base font-semibold whitespace-nowrap">ការកំណត់</span>}
-          </button>
-          
-          <button
-            onClick={() => handleNavigation('/logout')}
-            className={`w-full flex items-center ${isExpanded ? "gap-4 px-6" : "justify-center px-2"} py-4 text-gray-700 hover:bg-white hover:shadow-sm rounded-2xl transition-all duration-200`}
-            title="ចាកចេញ"
-          >
-            <LogOut size={24} className="shrink-0" />
-            {isExpanded && <span className="text-base font-semibold whitespace-nowrap">ចាកចេញ</span>}
-          </button>
-        </div>
       </div>
 
       {/* Main Content */}

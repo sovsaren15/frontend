@@ -16,7 +16,8 @@ import {
   X,
   ChevronDown,
   Plus,
-  Upload
+  Upload,
+  ArrowLeft
 } from 'lucide-react';
 import { request } from "../../util/request";
 import toast from 'react-hot-toast';
@@ -301,13 +302,22 @@ const StudentTeacherPages = () => {
               <p className="text-gray-500 mt-1">មើលព័ត៌មានសិស្សតាមថ្នាក់រៀននីមួយៗ</p>
             </div>
             
-            <button 
-              className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-medium shadow-sm hover:bg-indigo-700 transition-colors flex items-center gap-2"
-              onClick={() => setIsRegisterModalOpen(true)}
-            >
-              <Plus size={20} />
-              ចុះឈ្មោះសិស្ស
-            </button>
+            <div className="flex gap-3">
+              <button 
+                className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-medium shadow-sm hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                onClick={() => setIsRegisterModalOpen(true)}
+              >
+                <Plus size={20} />
+                ចុះឈ្មោះសិស្ស
+              </button>
+                            <button
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2.5 rounded-xl font-semibold transition-all"
+              >
+                <ArrowLeft size={20} />
+                <span>ត្រឡប់ក្រោយ</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -455,7 +465,7 @@ const StudentTeacherPages = () => {
                           </button>
                           <button 
                             onClick={() => handleUpdate(student)}
-                            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            className="p-2 text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                             title="កែប្រែ"
                           >
                             <Edit size={18} />
@@ -559,7 +569,7 @@ const StudentTeacherPages = () => {
       {/* Register Student Modal */}
       {isRegisterModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 ">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-200 relative max-h-[90vh] flex flex-col">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl overflow-hidden animate-in fade-in zoom-in duration-200 relative max-h-[90vh] flex flex-col">
             
             {registering && (
               <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-10">
@@ -741,7 +751,7 @@ const StudentTeacherPages = () => {
             
             <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50 shrink-0">
               <button onClick={() => setIsUpdateModalOpen(false)} disabled={updatingStatus} className="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-white transition-colors disabled:opacity-50">បោះបង់</button>
-              <button onClick={handleUpdateSubmit} disabled={updatingStatus} className="px-5 py-2.5 rounded-xl bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors shadow-sm shadow-blue-200 flex items-center gap-2 disabled:opacity-70"><span>រក្សាទុក</span>{updatingStatus && <Loader2 className="animate-spin" size={16} />}</button>
+              <button onClick={handleUpdateSubmit} disabled={updatingStatus} className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200 flex items-center gap-2 disabled:opacity-70"><span>រក្សាទុក</span>{updatingStatus && <Loader2 className="animate-spin" size={16} />}</button>
             </div>
           </div>
         </div>

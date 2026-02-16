@@ -2,17 +2,64 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { request } from '../../util/request';
 import { format } from 'date-fns';
+import toast from 'react-hot-toast';
+import { 
+  ArrowLeft, 
+  Edit, 
+  MapPin, 
+  Mail, 
+  Phone, 
+  Calendar, 
+  Users, 
+  BookOpen, 
+  Layers, 
+  UserCheck, 
+  ShieldCheck,
+  CheckCircle2,
+  XCircle,
+  AlertCircle,
+  School,
+  Trash2
+} from 'lucide-react';
+
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  if (imagePath.startsWith('http')) return imagePath;
+  const normalizedPath = imagePath.replace(/\\/g, '/');
+  const relativePath = normalizedPath.includes('uploads/') ? normalizedPath.substring(normalizedPath.indexOf('uploads/')) : normalizedPath;
+  return `http://localhost/primary_school_attendance/${relativePath}`;
+};
+
+// Reusable component for displaying information clearly
+const InfoItem = ({ icon: Icon, label, value, colSpan = false }) => (
+  <div className={`flex items-start gap-4 p-4 rounded-2xl border border-gray-100 bg-gray-50/50 hover:bg-white hover:shadow-sm transition-all duration-200 ${colSpan ? 'lg:col-span-2' : ''}`}>
+    <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-xl shrink-0">
+      <Icon size={22} />
+    </div>
+    <div className="flex-1 min-w-0">
+      <p className="text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">{label}</p>
+      <p className="text-sm font-bold text-gray-900 truncate whitespace-normal">
+        {value || <span className="text-gray-400 font-normal italic">មិនមានទិន្នន័យ</span>}
+      </p>
+    </div>
+  </div>
+);
 
 const SchoolDetailViewPageAdmin = () => {
   const [schoolData, setSchoolData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const { schoolId: id } = useParams(); // Match the route parameter name for consistency
+  const { schoolId: id } = useParams();
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (schoolData) {
+      document.title = `${schoolData.name} | Primary School Attendance`;
+    }
+  }, [schoolData]);
+
+  useEffect(() => {
     const fetchSchoolDetails = async () => {
-      // Don't run the fetch if the id from the URL isn't available yet
       if (!id) {
         setLoading(false);
         return;
@@ -20,9 +67,9 @@ const SchoolDetailViewPageAdmin = () => {
       setLoading(true);
       try {
         const data = await request(`/schools/${id}`, 'GET');
-        setSchoolData(data?.data); // Safely access the data property
+        setSchoolData(data?.data);
       } catch (err) {
-        setError(err.message || 'Failed to fetch school details.');
+        setError(err.message || 'បរាជ័យក្នុងការទាញយកព័ត៌មានសាលា។');
         console.error(err);
       } finally {
         setLoading(false);
@@ -32,196 +79,227 @@ const SchoolDetailViewPageAdmin = () => {
     fetchSchoolDetails();
   }, [id]);
 
-  const handleEdit = () => {
-    navigate(`/admin/schools/update/${id}`);
-  };
-
-  const handleCancel = () => {
-    navigate('/admin/schools');
+  const handleEdit = () => navigate(`/admin/schools/update/${id}`);
+  const handleCancel = () => navigate('/admin/schools');
+  const handleDelete = async () => {
+    if (window.confirm('តើអ្នកពិតជាចង់លុបសាលានេះមែនទេ?')) {
+      try {
+        await request(`/schools/${id}`, 'DELETE');
+        toast.success('លុបសាលាបានជោគជ័យ');
+        navigate('/admin/schools');
+      } catch (err) {
+        console.error(err);
+        toast.error(err.response?.data?.message || 'បរាជ័យក្នុងការលុបសាលា');
+      }
+    }
   };
 
   if (loading) {
-    return <div className="p-8 text-center">Loading school details...</div>;
+    return (
+      <div className="min-h-screen bg-gray-50/50 flex items-center justify-center font-kantumruy">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-600 font-medium animate-pulse">កំពុងផ្ទុកទិន្នន័យសាលា...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="p-8 text-center text-red-500">Error: {error}</div>;
+    return (
+      <div className="min-h-screen bg-gray-50/50 flex items-center justify-center p-4 font-kantumruy">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 max-w-md w-full text-center">
+          <div className="bg-red-50 p-4 rounded-full inline-block mb-4">
+            <AlertCircle className="w-8 h-8 text-red-500" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900 mb-2">មានបញ្ហាក្នុងការផ្ទុកទិន្នន័យ</h3>
+          <p className="text-gray-500 mb-6 text-sm">{error}</p>
+          <button
+            onClick={handleCancel}
+            className="w-full bg-indigo-600 text-white py-2.5 px-4 rounded-xl hover:bg-indigo-700 transition-colors font-medium"
+          >
+            ត្រឡប់ក្រោយ
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (!schoolData) {
-    return <div className="p-8 text-center">No school data found.</div>;
+    return (
+      <div className="min-h-screen bg-gray-50/50 flex items-center justify-center p-4 font-kantumruy">
+        <div className="text-center text-gray-500">រកមិនឃើញទិន្នន័យសាលាទេ</div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4 sm:p-6 md:p-8">
-      {/* Main Content Card */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        {/* Cover and Logo Section */}
-        <div className="relative h-48 md:h-64 bg-gray-200">
-          <img
-            src={schoolData.cover || 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&h=400&fit=crop'}
-            alt={`${schoolData.name} cover`}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur-sm p-1.5 rounded-full shadow-lg">
-            <img
-              src={schoolData.logo || `https://ui-avatars.com/api/?name=${encodeURIComponent(schoolData.name)}&background=4F46E5&color=fff`}
-              alt={`${schoolData.name} logo`}
-              className="w-24 h-24 md:w-28 md:h-28 rounded-full object-cover border-4 border-white"
-            />
+    <div className="min-h-screen  p-4 sm:p-6 md:p-8 font-kantumruy pb-20">
+      <div className=" mx-auto space-y-6">
+        
+        {/* HEADER */}
+        <div className="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
+              <span className="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
+                <School className="w-6 h-6" />
+              </span>
+              ព័ត៌មានលម្អិតសាលា
+            </h1>
+            <p className="text-gray-500 mt-1 ml-11">
+              មើលព័ត៌មានលម្អិតនិងស្ថិតិរបស់សាលា
+            </p>
           </div>
-        </div>
-
-        {/* Header with School Name and Status */}
-        <div className="flex flex-col items-center justify-between px-6 pt-16 pb-4 border-b border-gray-200 text-center">
-          <h1 className="text-2xl font-bold text-gray-800">{schoolData.name}</h1>
-          <span className={`mt-2 px-3 py-1 text-sm rounded-full font-medium ${
-            schoolData.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-          }`}>
-            {schoolData.status === 'active' ? 'កំពុងដំណើរការ' : 'បានផ្អាក'}
-          </span>
-        </div>
-
-        {/* Content */}
-        <div className="p-6">
-          {/* School Information Section */}
-          <div className="mb-8">
-            <h3 className="text-base font-semibold text-gray-800 mb-4 border-b pb-2">ព័ត៌មានទូទៅ</h3>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* School Name */}
-              <div>
-                <label className="block text-sm font-normal text-gray-700 mb-2">
-                  ឈ្មោះសាលា
-                </label>
-                <p className="text-sm font-medium text-gray-600 px-2">
-                  {schoolData.name}
-                </p>
-              </div>
-
-              {/* Director Name */}
-              <div>
-                <label className="block text-sm font-normal text-gray-700 mb-2">
-                  អ្នកគ្រប់គ្រង
-                </label>
-                <p className="text-sm text-gray-600 px-2">
-                  {schoolData.director_name || 'N/A'}
-                </p>
-              </div>
-
-              {/* Description */}
-              <div className="lg:row-span-2">
-                <label className="block text-sm font-normal text-gray-700 mb-2">
-                  ទីតាំងរបស់សាលា
-                </label>
-                <p className="text-sm text-gray-600 px-2">
-                  {schoolData.address}
-                </p>
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-normal text-gray-700 mb-2">
-                  អ៊ីមែល
-                </label>
-                <p className="text-sm text-gray-600 px-2">
-                  {schoolData.email}
-                </p>
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label className="block text-sm font-normal text-gray-700 mb-2">
-                  លេខទូរស័ព្ទ
-                </label>
-                <p className="text-sm text-gray-600 px-2">
-                  {schoolData.phone_number}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Profile Information Section */}
-          <div className="mb-8">
-            <h3 className="text-base font-semibold text-gray-800 mb-4 border-b pb-2">ស្ថិតិ និងព័ត៌មានបន្ថែម</h3>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Founded Date */}
-              <div>
-                <label className="block text-sm font-normal text-gray-700 mb-2">
-                  ថ្ងៃបង្កើត
-                </label>
-                <p className="text-sm text-gray-600 px-2">
-                  {schoolData.founded_date ? format(new Date(schoolData.founded_date), 'dd/MM/yyyy') : 'N/A'}
-                </p>
-              </div>
-
-              {/* School Type */}
-              <div>
-                <label className="block text-sm font-normal text-gray-700 mb-2">
-                  ប្រភេទសាលា
-                </label>
-                <p className="text-sm text-gray-600 px-2">
-                  {'សាធារណៈ'} {/* This seems to be a static value for now */}
-                </p>
-              </div>
-
-              {/* District */}
-              <div>
-                <label className="block text-sm font-normal text-gray-700 mb-2">
-                  កំរិត
-                </label>
-                <p className="text-sm text-gray-600 px-2">
-                  {schoolData.school_level || 'N/A'}
-                </p>
-              </div>
-
-              {/* Total Teachers */}
-              <div>
-                <label className="block text-sm font-normal text-gray-700 mb-2">
-                  ចំនួនគ្រូ
-                </label>
-                <p className="text-sm text-gray-600 px-2">
-                  {schoolData.total_teachers}
-                </p>
-              </div>
-
-              {/* Total Students */}
-              <div>
-                <label className="block text-sm font-normal text-gray-700 mb-2">
-                  ចំនួនសិស្ស
-                </label>
-                <p className="text-sm text-gray-600 px-2">
-                  {schoolData.total_students}
-                </p>
-              </div>
-
-              {/* Total Classes */}
-              <div>
-                <label className="block text-sm font-normal text-gray-700 mb-2">
-                  ចំនួនថ្នាក់
-                </label>
-                <p className="text-sm text-gray-600 px-2">
-                  {schoolData.total_classes}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+          <div className="flex gap-3">
             <button
-              onClick={handleCancel}
-              className="px-8 py-2 border border-gray-300 text-gray-700 rounded hover:bg-gray-50 transition font-normal"
+              onClick={handleDelete}
+              className="flex items-center gap-2 px-5 py-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition font-bold shadow-sm hover:shadow-md"
             >
-              បោះបង់
+              <Trash2 size={18} />
+              <span>លុប</span>
             </button>
             <button
               onClick={handleEdit}
-              className="px-8 py-2 bg-indigo-900 text-white rounded hover:bg-indigo-800 transition font-normal"
+              className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition font-bold shadow-sm hover:shadow-md"
             >
-              កែសម្រួល
+              <Edit size={18} />
+              <span>កែសម្រួល</span>
             </button>
+          </div>
+        </div>
+
+        {/* Main Content Card */}
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+          
+          {/* Cover Section */}
+          <div className="relative h-60 md:h-72 w-full bg-gray-200 group">
+            <img
+              src={getImageUrl(schoolData.cover) || 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=1200&h=400&fit=crop'}
+              alt={`${schoolData.name} cover`}
+              className="w-full h-full object-cover"
+            />
+            {/* Dark Gradient Overlay for better contrast */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+          </div>
+
+          {/* Profile Header Section */}
+          <div className="relative px-6 md:px-10 pb-8">
+            <div className="flex flex-col md:flex-row items-center md:items-end gap-6 -mt-16 md:-mt-20 relative z-10">
+              {/* Logo */}
+              <div className="bg-white p-1.5 rounded-full shadow-lg shrink-0">
+                <img
+                  src={getImageUrl(schoolData.logo) || `https://ui-avatars.com/api/?name=${encodeURIComponent(schoolData.name)}&background=4F46E5&color=fff`}
+                  alt={`${schoolData.name} logo`}
+                  className="w-32 h-32 md:w-40 md:h-40 rounded-full object-cover border-4 border-gray-50"
+                />
+              </div>
+              
+              {/* Title & Status */}
+              <div className="flex-1 text-center md:text-left mb-2 md:mb-4">
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">{schoolData.name}</h1>
+                <div className="flex items-center justify-center md:justify-start gap-3">
+                  <span className={`inline-flex items-center gap-1.5 px-3 py-1 text-xs rounded-full font-bold border ${
+                    schoolData.status === 'active' 
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                      : 'bg-red-50 text-red-700 border-red-200'
+                  }`}>
+                    {schoolData.status === 'active' ? <CheckCircle2 size={14} /> : <XCircle size={14} />}
+                    {schoolData.status === 'active' ? 'កំពុងដំណើរការ' : 'បានផ្អាក'}
+                  </span>
+                  {schoolData.school_level && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs rounded-full font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                      <Layers size={14} />
+                      {schoolData.school_level}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <hr className="border-gray-100" />
+
+          {/* Content Details */}
+          <div className="p-6 md:p-10 space-y-10">
+            
+            {/* General Info */}
+            <section>
+              <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <ShieldCheck className="text-indigo-500" size={24} />
+                ព័ត៌មានទូទៅ
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <InfoItem 
+                  icon={UserCheck} 
+                  label="នាយកសាលា" 
+                  value={schoolData.director_name} 
+                />
+                <InfoItem 
+                  icon={Mail} 
+                  label="អ៊ីមែល" 
+                  value={schoolData.email} 
+                />
+                <InfoItem 
+                  icon={Phone} 
+                  label="លេខទូរស័ព្ទ" 
+                  value={schoolData.phone_number} 
+                />
+                <InfoItem 
+                  icon={MapPin} 
+                  label="ទីតាំងសាលា" 
+                  value={schoolData.address} 
+                  colSpan={true}
+                />
+              </div>
+            </section>
+
+            {/* Statistics Info */}
+            <section>
+              <h3 className="text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                <BookOpen className="text-indigo-500" size={24} />
+                ស្ថិតិ និងព័ត៌មានបន្ថែម
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <InfoItem 
+                  icon={Calendar} 
+                  label="ថ្ងៃបង្កើត" 
+                  value={schoolData.founded_date ? format(new Date(schoolData.founded_date), 'dd/MM/yyyy') : null} 
+                />
+                <InfoItem 
+                  icon={Users} 
+                  label="ចំនួនគ្រូបង្រៀន" 
+                  value={schoolData.total_teachers ? `${schoolData.total_teachers} នាក់` : '0 នាក់'} 
+                />
+                <InfoItem 
+                  icon={Users} 
+                  label="ចំនួនសិស្ស" 
+                  value={schoolData.total_students ? `${schoolData.total_students} នាក់` : '0 នាក់'} 
+                />
+                <InfoItem 
+                  icon={BookOpen} 
+                  label="ចំនួនថ្នាក់រៀន" 
+                  value={schoolData.total_classes ? `${schoolData.total_classes} ថ្នាក់` : '0 ថ្នាក់'} 
+                />
+              </div>
+            </section>
+            
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
+              <button
+                onClick={handleCancel}
+                className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2.5 rounded-xl font-semibold transition-all"
+              >
+                <ArrowLeft size={20} />
+                <span>ត្រឡប់ក្រោយ</span>
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex items-center gap-2 px-5 py-2.5 bg-red-50 text-red-600 rounded-xl hover:bg-red-100 transition font-bold shadow-sm hover:shadow-md"
+              >
+                <Trash2 size={18} />
+                <span>លុប</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

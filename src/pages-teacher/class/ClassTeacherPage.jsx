@@ -439,7 +439,13 @@ const ClassTeacherPage = () => {
           </div>
         )}
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={() => navigate('/teacher/results')}
+            className="px-6 py-2.5 rounded-xl border border-indigo-600 bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-all shadow-sm"
+          >
+            លទ្ធផលសិក្សា
+          </button>
           <button
             onClick={() => navigate(-1)}
             className="px-6 py-2.5 rounded-xl border border-red-600 bg-red-600 text-white font-semibold hover:bg-red-700 transition-all shadow-sm"

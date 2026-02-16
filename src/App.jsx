@@ -1,6 +1,9 @@
 import { Outlet, Route, Routes } from "react-router-dom";
 
 //teacher 
+import EventViewdetailTeacherPage from "./pages-teacher/event/EventViewdetailTeacherPage.jsx";
+import SchoolTeacherPage from "./pages-teacher/school/SchoolTeacherPage.jsx";
+import EventTeacherPage from "./pages-teacher/event/EventTeacherPage.jsx";
 import ProfileTeacherChangePassword from "./pages-teacher/profile/ProfileTeacherChangePassword.jsx";
 import ProfileDetailViewTeacher from "./pages-teacher/profile/ProfileDetailViewTeacher.jsx";
 import CreateSudentTeacherPages from "./pages-teacher/student/CreateSudentTeacherPages.jsx";
@@ -17,6 +20,8 @@ import AttendanceDataTeacherPage from "./pages-teacher/attendance/AttendanceData
 import StudentDetailViewTeacher from "./pages-teacher/student/StudentDetailViewTeacher.jsx";
 
 //principal
+import ProfileDetailViewPrincipal from "./pages-principal/profile/ProfileDetailViewPrincipal.jsx";
+import ProfilePrincipalChangePassword from "./pages-principal/profile/ProfilePrincipalChangePassword.jsx";
 import TeacherDetailViewPrincipal from "./pages-principal/teacher/TeacherDetailViewPrincipal.jsx";
 import EventViewdetailPrincipalPage from "./pages-principal/event/EventViewdetailPrincipalPage.jsx";
 import CreateSudentPrincipalPages from "./pages-principal/student/CreateSudentPrincipalPages.jsx";
@@ -37,21 +42,17 @@ import CreateTeacherPrincipalPage from "./pages-principal/teacher/CreateTeacherP
 import SchoolPrincipalPage from "./pages-principal/school/SchoolPrincipalPage";
 import DashboardPagePrincipal from "./pages-principal/dashboard/DashboardPagePrincipal";
 
-//Principal admin---------------
+//admin---------------
 import PrincipalDetailViewPageAdmin from "./pages-admin/principals/PrincipalDetailViewPageAdmin";
 import PrincipalsAdminPage from "./pages-admin/principals/PrincipalsAdminPage";
 import CreatePrincipalAdminPage from "./pages-admin/principals/CreatePrincipalAdminPage";
 import UpdatePrincipalAdminPage from "./pages-admin/principals/UpdatePrincipalAdminPage";
-//Event---------------
-import EventDetailViewPageAdmin from "./pages-admin/events/EventDetailViewPageAdmin";
-import EventsAdminPage from "./pages-admin/events/EventsAdminPage";
-import CreateEventPageAdmin from "./pages-admin/events/CreateEventPageAdmin";
-import UpdateEventPageAdmin from "./pages-admin/events/UpdateEventPageAdmin";
-//School---------------
 import UpdateSchoolsPageAdmin from "./pages-admin/schools/UpdateSchoolsPageAdmin";
 import SchoolDetailViewPageAdmin from "./pages-admin/schools/SchoolDetailViewPageAdmin";
 import CreateSchoolsPageAdmin from "./pages-admin/schools/CreateSchoolsPageAdmin"; 
 import SchoolsPageAdmin from "./pages-admin/schools/SchoolsPageAdmin";
+import ProfileDetailViewAdmin from "./pages-admin/profile/ProfileDetailViewAdmin.jsx";
+import ProfileAdminChangePassword from "./pages-admin/profile/ProfileAdminChangePassword.jsx";
 //Layout----------------
 import MainAuthLayout from "./component/layout/MainAuthLayout";
 import MainLayoutPrincipal from "./component/layout/MainLayoutPrincipal";
@@ -80,16 +81,13 @@ const App = () => {
           <Route path="schools/create" element={<CreateSchoolsPageAdmin />} />
           <Route path="schools/view/:schoolId" element={<SchoolDetailViewPageAdmin />} />
           <Route path="schools/update/:schoolId" element={<UpdateSchoolsPageAdmin />} />
-          {/* Event Routes */}
-          <Route path="events" element={<EventsAdminPage />} />
-          <Route path="events/create" element={<CreateEventPageAdmin />} /> 
-          <Route path="events/update" element={<UpdateEventPageAdmin />} />
-          <Route path="events/viewdetail" element={<EventDetailViewPageAdmin />} />
           {/* Principal Routes */}
           <Route path="principals" element={<PrincipalsAdminPage />} />
           <Route path="principals/:principalId" element={<PrincipalDetailViewPageAdmin />} />
           <Route path="principals/update/:principalId" element={<UpdatePrincipalAdminPage />} />
           <Route path="principals/create" element={<CreatePrincipalAdminPage />} />
+          <Route path="profile" element={<ProfileDetailViewAdmin />} />
+          <Route path="change-password" element={<ProfileAdminChangePassword />} />
         </Route>
 
         {/* Principal Routes */}
@@ -106,6 +104,8 @@ const App = () => {
           <Route path="results" element={<ResultPrincipalPage />} />
           <Route path="attendance" element={<AttendancePrincipalPage />} />
           <Route path="teachers/:teacherId" element={<TeacherDetailViewPrincipal />} />
+          <Route path="profile" element={<ProfileDetailViewPrincipal />} />
+          <Route path="change-password" element={<ProfileTeacherChangePassword />} />
 
           {/* Student Routes */}
           <Route path="students" element={<StudentPrincipalPages />} />
@@ -127,13 +127,16 @@ const App = () => {
           <Route path="attendance" element={<AttendanceTeacherPage />} />
           <Route path="attendance-report" element={<AttendanceDataTeacherPage />} />
           <Route path="scores" element={<ScoreTeacherPage />} />
-          <Route path="score-report" element={<ScoreReportTeacherPage />} />
+          <Route path="results" element={<ScoreReportTeacherPage />} />
           <Route path="results" element={<ResultTeacherPage />} />
           <Route path="students" element={<StudentTeacherPages />} />
           <Route path="students/:studentId" element={<StudentDetailViewTeacher />} />
           <Route path="students/create" element={<CreateSudentTeacherPages />} />
           <Route path="profile" element={<ProfileDetailViewTeacher />} />
           <Route path="change-password" element={<ProfileTeacherChangePassword />} />
+          <Route path="events" element={<EventTeacherPage />} />  
+          <Route path="schools" element={<SchoolTeacherPage />} />
+          <Route path="events/viewdetail/:eventId" element={<EventViewdetailTeacherPage />} />
           {/* Add more teacher-specific routes here */}
         </Route>
 

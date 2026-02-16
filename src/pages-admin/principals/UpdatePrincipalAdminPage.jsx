@@ -89,11 +89,11 @@ const UpdatePrincipalAdminPage = () => {
       payload.school_id = payload.school_id || null;
 
       await request(`/principals/${principalId}`, 'PUT', payload);
-      toast.success('Principal updated successfully!');
+      toast.success('កែប្រែព័ត៌មានអ្នកគ្រប់គ្រងបានជោគជ័យ');
       navigate('/admin/principals');
     } catch (error) {
       console.error("Failed to update principal", error);
-      toast.error(error.response?.data?.message || "Failed to update principal.");
+      toast.error(error.response?.data?.message || "បរាជ័យក្នុងការកែប្រែព័ត៌មានអ្នកគ្រប់គ្រង");
     } finally {
       setLoading(false);
     }

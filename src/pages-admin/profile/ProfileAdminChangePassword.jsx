@@ -4,7 +4,7 @@ import toast from "react-hot-toast";
 import { Lock, Eye, EyeOff, Save, Loader2, KeyRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const ProfileTeacherChangePassword = () => {
+const ProfileAdminChangePassword = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     currentPassword: '',
@@ -179,4 +179,4 @@ const ProfileTeacherChangePassword = () => {
   );
 };
 
-export default ProfileTeacherChangePassword;
+export default ProfileAdminChangePassword;

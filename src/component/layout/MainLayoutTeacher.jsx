@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Outlet, useNavigate, NavLink } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Outlet, useNavigate, NavLink, useLocation } from "react-router-dom";
+import { request } from "../../util/request";
 import {
   Home,
   BookOpen,
@@ -10,19 +11,69 @@ import {
   CalendarCheck,
   Users,
   Award,
+  Building2,
 } from "lucide-react";
 import Navbar from "./Navbar";
 
 const MainLayoutTeacher = () => {
   const [openMenu, setOpenMenu] = useState("school");
   const [isExpanded, setIsExpanded] = useState(false); // Default to collapsed based on your image
+  const [schoolName, setSchoolName] = useState("សាលាបឋមសិក្សា");
+  const [schoolLogo, setSchoolLogo] = useState(null);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return null;
+    if (imagePath.startsWith("http")) return imagePath;
+    const normalizedPath = imagePath.replace(/\\/g, "/");
+    const relativePath = normalizedPath.includes("uploads/")
+      ? normalizedPath.substring(normalizedPath.indexOf("uploads/"))
+      : normalizedPath;
+    return `http://localhost:8081/${relativePath}`;
+  };
 
   const toggleMenu = (menuName) => {
     // If sidebar is collapsed, expand it when clicking a menu item
     if (!isExpanded) setIsExpanded(true);
     setOpenMenu(openMenu === menuName ? null : menuName);
   };
+
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.includes("/teacher/dashboard")) document.title = "Dashboard ";
+    else if (path.includes("/teacher/schools")) document.title = "School Information";
+    else if (path.includes("/teacher/events")) document.title = "Events";
+    else if (path.includes("/teacher/classes")) document.title = "Classes ";
+    else if (path.includes("/teacher/students")) document.title = "Students ";
+    else if (path.includes("/teacher/attendance")) document.title = "Attendance";
+    else if (path.includes("/teacher/scores")) document.title = "Scores ";
+    else if (path.includes("/teacher/results")) document.title = "Results ";
+    else if (path.includes("/teacher/profile")) document.title = "Profile ";
+    else document.title = "Primary School Attendance";
+  }, [location]);
+
+  useEffect(() => {
+    const fetchSchoolDetails = async () => {
+      try {
+        const res = await request('/teachers/me', 'GET');
+        if (res.data) {
+          if (res.data.school_name) {
+            setSchoolName(res.data.school_name);
+          }
+          if (res.data.school_id) {
+            const schoolRes = await request(`/schools/${res.data.school_id}`, 'GET');
+            if (schoolRes.data && schoolRes.data.logo) {
+              setSchoolLogo(schoolRes.data.logo);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch school details", error);
+      }
+    };
+    fetchSchoolDetails();
+  }, []);
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -41,29 +92,30 @@ const MainLayoutTeacher = () => {
         >
           {/* School Logo */}
           <div
-            className={`${isExpanded ? "w-20 h-20" : "w-12 h-12"} transition-all duration-300 bg-white rounded-full flex items-center justify-center shadow-sm border-4 border-blue-600 shrink-0`}
+            className={`${
+              isExpanded ? "w-20 h-20 border-4" : "w-14 h-14 border-2" // Reduced border in small mode to give logo more space
+            } transition-all duration-300 bg-white rounded-full flex items-center justify-center shadow-sm border-indigo-600 shrink-0 overflow-hidden`}
           >
-            <div
-              className={`${isExpanded ? "w-16 h-16" : "w-8 h-8"} bg-gradient-to-br from-blue-500 to-blue-700 rounded-full flex items-center justify-center`}
-            >
-              {/* Simplified Logo for Collapsed State */}
+            {schoolLogo ? (
+              <img
+                src={getImageUrl(schoolLogo)}
+                alt="School Logo"
+                // Added scale-110 (110% zoom) specifically when NOT expanded
+                className={`w-full h-full object-cover transition-transform duration-300 ${
+                  !isExpanded ? "scale-125" : "scale-130"
+                }`}
+              />
+            ) : (
+              /* Placeholder Logic */
               <div className="relative">
-                {isExpanded ? (
-                  // Detailed icon when expanded
-                  <>
-                    <div className="w-8 h-6 bg-white rounded-sm"></div>
-                    <div className="absolute top-1 left-1 w-6 h-1 bg-green-500"></div>
-                    <div className="absolute top-3 left-1 w-6 h-1 bg-red-500"></div>
-                    <div className="absolute -top-2 left-3 w-0.5 h-2 bg-yellow-400 rotate-0"></div>
-                    <div className="absolute -top-1 left-5 w-0.5 h-2 bg-yellow-400 rotate-45"></div>
-                    <div className="absolute -top-1 left-1 w-0.5 h-2 bg-yellow-400 -rotate-45"></div>
-                  </>
-                ) : (
-                  // Simple dot/icon when collapsed (like the blue circle in your image)
-                  <div className="w-3 h-3 bg-white rounded-full"></div>
-                )}
+                {/* ... keep your existing placeholder logic here ... */}
+                <div
+                  className={`${isExpanded ? "w-16 h-16" : "w-8 h-8"} bg-gradient-to-br from-indigo-500 to-indigo-700 rounded-full flex items-center justify-center`}
+                >
+                  {/* ... placeholder shapes ... */}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* School Name - Hidden if collapsed */}
@@ -73,7 +125,7 @@ const MainLayoutTeacher = () => {
             <h1 className="text-lg font-bold text-gray-800 leading-tight whitespace-nowrap">
               ប្រព័ន្ធគ្រប់គ្រង
             </h1>
-            <p className="text-sm text-gray-600 font-medium">សាលាបឋមសិក្សា</p>
+            <p className="text-sm text-gray-600 font-medium">{schoolName}</p>
           </div>
         </div>
 
@@ -90,7 +142,45 @@ const MainLayoutTeacher = () => {
               <span className="text-base whitespace-nowrap">Dashboard</span>
             )}
           </button>
+          <div className="mb-2">
+            <button
+              onClick={() => toggleMenu("school")}
+              className={`w-full flex items-center ${isExpanded ? "justify-between px-6" : "justify-center px-2"} py-4 text-gray-700 hover:bg-white hover:shadow-sm rounded-2xl transition-all duration-200`}
+              title="អំពីសាលា"
+            >
+              <div className={`flex items-center ${isExpanded ? "gap-4" : ""}`}>
+                <Building2 size={24} className="shrink-0" />
+                {isExpanded && (
+                  <span className="text-base font-semibold whitespace-nowrap">
+                    អំពីសាលា
+                  </span>
+                )}
+              </div>
+              {isExpanded &&
+                (openMenu === "school" ? (
+                  <ChevronUp size={20} />
+                ) : (
+                  <ChevronDown size={20} />
+                ))}
+            </button>
 
+            {openMenu === "school" && isExpanded && (
+              <div className="mt-2 ml-14 space-y-1 border-l-2 border-gray-200 pl-4">
+                <button
+                  onClick={() => navigate("/teacher/schools")}
+                  className="block w-full text-left py-2 text-sm text-gray-600 hover:text-indigo-600 transition-colors duration-200"
+                >
+                  ព័ត៌មានទូទៅសាលា
+                </button>
+                <button
+                  onClick={() => navigate("/teacher/events")}
+                  className="block w-full text-left py-2 text-sm text-gray-600 hover:text-indigo-600 transition-colors duration-200"
+                >
+                  ព្រឹត្តិការណ៍ក្នុងសាលា
+                </button>
+              </div>
+            )}
+          </div>
           {/* Classroom Management */}
           <div className="mb-2">
             <button
@@ -278,7 +368,7 @@ const MainLayoutTeacher = () => {
                   បញ្ជូលពិន្ទុ
                 </NavLink>
                 <NavLink
-                  to="/teacher/score-report"
+                  to="/teacher/results"
                   className={({ isActive }) =>
                     `block w-full text-left py-2 px-2 text-sm transition-colors duration-200 ${
                       isActive

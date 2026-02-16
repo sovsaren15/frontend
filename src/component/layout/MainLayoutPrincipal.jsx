@@ -54,7 +54,7 @@ const MainLayoutPrincipal = () => {
     const relativePath = normalizedPath.includes("uploads/")
       ? normalizedPath.substring(normalizedPath.indexOf("uploads/"))
       : normalizedPath;
-    return `http://localhost/primary_school_attendance/${relativePath}`;
+    return `http://localhost:8081/${relativePath}`;
   };
 
   const toggleMenu = (menuName) => {
@@ -62,6 +62,20 @@ const MainLayoutPrincipal = () => {
     if (!isExpanded) setIsExpanded(true);
     setOpenMenu(openMenu === menuName ? null : menuName);
   };
+
+    useEffect(() => {
+    const path = location.pathname;
+    if (path.includes("/teacher/dashboard")) document.title = "Dashboard ";
+    else if (path.includes("/teacher/schools")) document.title = "School Information";
+    else if (path.includes("/teacher/events")) document.title = "Events";
+    else if (path.includes("/teacher/classes")) document.title = "Classes ";
+    else if (path.includes("/teacher/students")) document.title = "Students ";
+    else if (path.includes("/teacher/attendance")) document.title = "Attendance";
+    else if (path.includes("/teacher/scores")) document.title = "Scores ";
+    else if (path.includes("/teacher/results")) document.title = "Results ";
+    else if (path.includes("/teacher/profile")) document.title = "Profile ";
+    else document.title = "Primary School Attendance";
+  }, [location]);
 
   return (
     <div className="flex h-screen bg-gray-100">

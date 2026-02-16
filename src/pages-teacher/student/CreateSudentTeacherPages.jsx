@@ -91,20 +91,43 @@ const CreateStudentTeacherPages = () => {
     }
   };
 
+  const handleReset = () => {
+    setRegisterData({
+      first_name: '',
+      last_name: '',
+      email: '',
+      password: '',
+      phone_number: '',
+      address: '',
+      date_of_birth: '',
+      enrollment_date: new Date().toISOString().split('T')[0]
+    });
+    setSelectedFile(null);
+  };
+
   return (
     <div className="min-h-screen  pb-20 font-kantumruy">
       <div className="mx-auto px-4 sm:px-6 lg:px-8 py-8 ">
         
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-indigo-50 rounded-xl">
-              <UserPlus className="text-indigo-600" size={24} />
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-indigo-50 rounded-xl">
+                <UserPlus className="text-indigo-600" size={24} />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">ចុះឈ្មោះសិស្សថ្មី</h1>
+                <p className="text-sm text-gray-500 mt-0.5">បង្កើតគណនីសិស្សនិងបញ្ចូលទៅក្នុងថ្នាក់រៀន</p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">ចុះឈ្មោះសិស្សថ្មី</h1>
-              <p className="text-sm text-gray-500 mt-0.5">បង្កើតគណនីសិស្សនិងបញ្ចូលទៅក្នុងថ្នាក់រៀន</p>
-            </div>
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2.5 rounded-xl font-semibold transition-all"
+            >
+              <ArrowLeft size={20} />
+              <span>ត្រឡប់ក្រោយ</span>
+            </button>
           </div>
         </div>
 
@@ -290,15 +313,15 @@ const CreateStudentTeacherPages = () => {
             {/* Footer Buttons */}
             <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
               <button
-                onClick={() => navigate(-1)}
-                className="px-6 py-2.5 rounded-full border border-indigo-600 text-indigo-600 font-bold hover:bg-indigo-50 transition-colors"
+                onClick={handleReset}
+                className="px-6 py-2.5 rounded-xl border border-red-600 bg-red-600 text-white font-semibold hover:bg-red-700 transition-all shadow-sm"
               >
-                បោះបង់
+                សម្អាត
               </button>
               <button
                 onClick={handleRegisterSubmit}
                 disabled={loading}
-                className="px-8 py-2.5 rounded-full bg-indigo-900 text-white font-bold hover:bg-indigo-800 transition-all shadow-md flex items-center gap-2 disabled:opacity-70"
+                className="px-6 py-2.5 rounded-xl border border-indigo-600 bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-all shadow-sm"
               >
                 {loading && <Loader2 className="animate-spin w-4 h-4" />}
                 {loading ? 'កំពុងរក្សាទុក...' : 'រក្សាទុក'}
