@@ -355,7 +355,7 @@ const AttendanceDataTeacherPage = () => {
       <div className="flex justify-end gap-3">
         <button
           onClick={() => navigate('/teacher/attendance')}
-          className="px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-all shadow-sm"
+          className="px-6 py-2.5 rounded-xl bg-primary text-white font-semibold hover:bg-indigo-700 transition-all shadow-sm"
         >
           ស្រង់វត្តមាន
         </button>

@@ -384,7 +384,7 @@ const ScoreTeacherPage = () => {
       }
 
       await request('/scores', 'POST', { records: payload });
-      toast.success(`រក្សាទុកពិន្ទុ ${payload.length} ជោគជ័យ`);
+      toast.success(`រក្សាទុកពិន្ទុជោគជ័យ`);
       setHasUnsavedChanges(false);
       setLastSavedDate(date);
       loadScores(true, true);

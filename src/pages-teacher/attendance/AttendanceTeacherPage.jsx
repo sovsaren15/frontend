@@ -115,10 +115,18 @@ const AttendanceTeacherPage = () => {
         // --- CRITICAL FIX: Match both Student ID AND Date ---
         const record = existingRecords.find(r => {
           const idMatch = String(r.student_id) === sId;
-          // Split by 'T' to handle ISO strings like "2026-01-23T00:00:00" if backend sends them
-          const recordDate = r.date ? String(r.date).split('T')[0] : '';
-          const dateMatch = recordDate === date;
-          return idMatch && dateMatch;
+          
+          // Robust date matching
+          let recordDate = '';
+          if (r.date) {
+             // Handle both ISO string and Date object
+             const d = new Date(r.date);
+             // Format to YYYY-MM-DD using local time components to match the date picker
+             recordDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+          }
+          
+          // Since we filtered by date in API, we can be lenient, but strict match is safer
+          return idMatch && (recordDate === date || r.date?.toString().startsWith(date));
         });
 
         initialAttendance[sId] = {
@@ -223,15 +231,6 @@ const AttendanceTeacherPage = () => {
                 className="pl-10 pr-4 py-2.5 rounded-xl border border-gray-200 bg-white focus:ring-2 focus:ring-indigo-500 outline-none text-gray-700 font-medium cursor-pointer"
               />
             </div>
-
-            <button 
-              onClick={handleSave}
-              disabled={submitting}
-              className="flex items-center justify-center gap-2 bg-slate-800 hover:bg-slate-900 text-white px-6 py-2.5 rounded-xl font-medium transition-colors shadow-sm disabled:opacity-70"
-            >
-              {submitting ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
-              <span>រក្សាទុក</span>
-            </button>
           </div>
         </div>
       </div>
@@ -365,16 +364,18 @@ const AttendanceTeacherPage = () => {
 
       <div className="flex justify-end gap-3">
         <button
-          onClick={() => navigate('/teacher/attendance-report')}
-          className="px-6 py-2.5 rounded-xl bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-all shadow-sm"
-        >
-          មើលរបាយការណ៍
-        </button>
-        <button
           onClick={() => navigate(-1)}
           className="px-6 py-2.5 rounded-xl border border-gray-300 bg-white text-gray-700 font-semibold hover:bg-gray-50 transition-all shadow-sm"
         >
           បោះបង់
+        </button>
+        <button 
+          onClick={handleSave}
+          disabled={submitting}
+          className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl border border-gray-300 bg-primary text-white font-semibold hover:bg-gray-50 rounded-xl font-medium transition-colors shadow-sm disabled:opacity-70"
+        >
+          {submitting ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+          <span>រក្សាទុក</span>
         </button>
       </div>
       

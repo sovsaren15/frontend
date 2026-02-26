@@ -255,7 +255,7 @@ const UpdateClassPrincipalPage = () => {
 
   return (
     <div className="p-6 bg-gray-50/50 min-h-screen font-kantumruy">
-      <div className="max-w-5xl mx-auto">
+      <div className="mx-auto">
         
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">

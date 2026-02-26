@@ -17,6 +17,14 @@ import {
 } from 'lucide-react';
 import { request } from "../../util/request";
 
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  if (imagePath.startsWith('http')) return imagePath;
+  const normalizedPath = imagePath.replace(/\\/g, '/');
+  const relativePath = normalizedPath.includes('uploads/') ? normalizedPath.substring(normalizedPath.indexOf('uploads/')) : normalizedPath;
+  return `http://localhost:8081/${relativePath}`;
+};
+
 const ClassDetailViewPrincipalPage = () => {
   const { classId } = useParams();
   const navigate = useNavigate();
@@ -69,13 +77,17 @@ const ClassDetailViewPrincipalPage = () => {
     }
   }, [isModalOpen, classData?.school_id]);
 
-  const handleAddStudent = async (studentId) => {
+  const handleAddStudent = async (student) => {
     try {
-      await request(`/classes/${classId}/students`, 'POST', { student_id: studentId });
+      await request(`/classes/${classId}/students`, 'POST', { student_id: student.id });
       await fetchClassDetails();
       setModalSearchTerm('');
     } catch (err) {
-      alert(err.response?.data?.message || "បរាជ័យក្នុងការបន្ថែមសិស្ស");
+      if (err.response && err.response.status === 409) {
+        alert(`${student.first_name} ${student.last_name} មាននៅក្នុងថ្នាក់រួចហើយ`);
+      } else {
+        alert(err.response?.data?.message || "បរាជ័យក្នុងការបន្ថែមសិស្ស");
+      }
     }
   };
 
@@ -291,8 +303,16 @@ const ClassDetailViewPrincipalPage = () => {
                           </td>
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                                {student.first_name?.[0]}{student.last_name?.[0]}
+                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-sm overflow-hidden relative">
+                                {student.image_profile && (
+                                  <img 
+                                    src={getImageUrl(student.image_profile)} 
+                                    alt="" 
+                                    className="w-full h-full object-cover absolute inset-0" 
+                                    onError={(e) => e.target.style.display = 'none'}
+                                  />
+                                )}
+                                <span>{student.first_name?.[0]}{student.last_name?.[0]}</span>
                               </div>
                               <span className="font-semibold text-slate-900">
                                 {student.first_name} {student.last_name}
@@ -437,11 +457,19 @@ const ClassDetailViewPrincipalPage = () => {
                     <div 
                       key={student.id} 
                       className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-2xl border border-slate-200 hover:border-indigo-200 transition-all group cursor-pointer"
-                      onClick={() => handleAddStudent(student.id)}
+                      onClick={() => handleAddStudent(student)}
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-sm">
-                          {student.first_name?.[0]}{student.last_name?.[0]}
+                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden relative">
+                          {student.image_profile && (
+                            <img 
+                              src={getImageUrl(student.image_profile)} 
+                              alt="" 
+                              className="w-full h-full object-cover absolute inset-0" 
+                              onError={(e) => e.target.style.display = 'none'}
+                            />
+                          )}
+                          <span>{student.first_name?.[0]}{student.last_name?.[0]}</span>
                         </div>
                         <div>
                           <h4 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">

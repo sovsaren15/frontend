@@ -32,7 +32,7 @@ const getImageUrl = (imagePath) => {
   if (imagePath.startsWith('http')) return imagePath;
   const normalizedPath = imagePath.replace(/\\/g, '/');
   const relativePath = normalizedPath.includes('uploads/') ? normalizedPath.substring(normalizedPath.indexOf('uploads/')) : normalizedPath;
-  return `http://localhost/primary_school_attendance/${relativePath}`;
+  return `http://localhost:8081/${relativePath}`;
 };
 
 const getStatusColor = (status) => {

@@ -14,8 +14,22 @@ import {
   Mail,
   Sparkles,
   Trash2,
+  Edit,
+  UserCog,
+  ChevronDown,
+  Loader2,
+  Upload,
+  User,
 } from 'lucide-react';
 import { request } from "../../util/request";
+
+const getImageUrl = (imagePath) => {
+  if (!imagePath) return null;
+  if (imagePath.startsWith('http')) return imagePath;
+  const normalizedPath = imagePath.replace(/\\/g, '/');
+  const relativePath = normalizedPath.includes('uploads/') ? normalizedPath.substring(normalizedPath.indexOf('uploads/')) : normalizedPath;
+  return `http://localhost:8081/${relativePath}`;
+};
 
 const ClassDetailViewTeacherPage = () => {
   const { classId } = useParams();
@@ -28,6 +42,14 @@ const ClassDetailViewTeacherPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalSearchTerm, setModalSearchTerm] = useState('');
   const [availableStudents, setAvailableStudents] = useState([]);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [studentToUpdate, setStudentToUpdate] = useState(null);
+  const [newStatus, setNewStatus] = useState('');
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const [updateData, setUpdateData] = useState({});
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [updating, setUpdating] = useState(false);
 
   const fetchClassDetails = async () => {
     try {
@@ -69,13 +91,17 @@ const ClassDetailViewTeacherPage = () => {
     }
   }, [isModalOpen, classData?.school_id]);
 
-  const handleAddStudent = async (studentId) => {
+  const handleAddStudent = async (student) => {
     try {
-      await request(`/classes/${classId}/students`, 'POST', { student_id: studentId });
+      await request(`/classes/${classId}/students`, 'POST', { student_id: student.id });
       await fetchClassDetails();
       setModalSearchTerm('');
     } catch (err) {
-      alert(err.response?.data?.message || "បរាជ័យក្នុងការបន្ថែមសិស្ស");
+      if (err.response && err.response.status === 409) {
+        alert(`${student.first_name} ${student.last_name} មាននៅក្នុងថ្នាក់រួចហើយ`);
+      } else {
+        alert(err.response?.data?.message || "បរាជ័យក្នុងការបន្ថែមសិស្ស");
+      }
     }
   };
 
@@ -86,6 +112,84 @@ const ClassDetailViewTeacherPage = () => {
       await fetchClassDetails();
     } catch (err) {
       alert(err.response?.data?.message || "បរាជ័យក្នុងការលុបសិស្ស");
+    }
+  };
+
+  const handleEditStatus = (student) => {
+    setStudentToUpdate(student);
+    setNewStatus(student.status || 'active');
+    setIsStatusModalOpen(true);
+  };
+
+  const handleSaveStatus = async (e) => {
+    e.preventDefault();
+    if (!studentToUpdate) return;
+    
+    setUpdatingStatus(true);
+    try {
+      await request(`/students/${studentToUpdate.id}`, 'PUT', { status: newStatus });
+      await fetchClassDetails();
+      setIsStatusModalOpen(false);
+      setStudentToUpdate(null);
+    } catch (err) {
+      console.error(err);
+      alert("បរាជ័យក្នុងការកែប្រែស្ថានភាព");
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
+  const handleUpdate = (student) => {
+    setUpdateData({
+      id: student.id,
+      first_name: student.first_name,
+      last_name: student.last_name,
+      phone_number: student.phone_number || '',
+      address: student.address || '',
+      date_of_birth: student.date_of_birth ? new Date(student.date_of_birth).toISOString().split('T')[0] : '',
+      enrollment_date: student.enrollment_date ? new Date(student.enrollment_date).toISOString().split('T')[0] : '',
+      image_profile: student.image_profile,
+      status: student.status || 'active'
+    });
+    setSelectedFile(null);
+    setIsUpdateModalOpen(true);
+  };
+
+  const handleUpdateChange = (e) => {
+    setUpdateData({ ...updateData, [e.target.name]: e.target.value });
+  };
+
+  const handleFileChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handleUpdateSubmit = async (e) => {
+    e.preventDefault();
+    setUpdating(true);
+    try {
+      const formData = new FormData();
+      formData.append('first_name', updateData.first_name);
+      formData.append('last_name', updateData.last_name);
+      formData.append('phone_number', updateData.phone_number);
+      formData.append('address', updateData.address);
+      formData.append('date_of_birth', updateData.date_of_birth);
+      formData.append('enrollment_date', updateData.enrollment_date);
+      formData.append('status', updateData.status);
+      
+      if (selectedFile) {
+        formData.append('image_profile', selectedFile);
+      }
+
+      await request(`/students/${updateData.id}`, 'PUT', formData);
+      await fetchClassDetails();
+      setIsUpdateModalOpen(false);
+    } catch (err) {
+      console.error(err);
+      alert("បរាជ័យក្នុងការកែប្រែព័ត៌មាន");
+    } finally {
+      setUpdating(false);
     }
   };
 
@@ -138,7 +242,7 @@ const ClassDetailViewTeacherPage = () => {
   if (error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/40 flex items-center justify-center p-4 font-kantumruy">
-        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-red-100 p-8 max-w-md w-full text-center">
+        <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-2xl border border-red-100 p-8 w-full text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-red-100 mb-6">
             <AlertCircle className="w-8 h-8 text-red-600" />
           </div>
@@ -159,7 +263,7 @@ const ClassDetailViewTeacherPage = () => {
 
   return (
     <div className="min-h-screen p-4 lg:p-8 font-kantumruy">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className=" mx-auto space-y-6">
 
         {/* Header Card */}
         <div className="relative bg-white/70 backdrop-blur-xl rounded-3xl shadow-lg border border-white/80 overflow-hidden">
@@ -282,9 +386,6 @@ const ClassDetailViewTeacherPage = () => {
                           </td>
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shadow-sm">
-                                {student.first_name?.[0]}{student.last_name?.[0]}
-                              </div>
                               <span className="font-semibold text-slate-900">
                                 {student.first_name} {student.last_name}
                               </span>
@@ -308,13 +409,29 @@ const ClassDetailViewTeacherPage = () => {
                             </span>
                           </td>
                           <td className="py-4 px-6 text-right">
-                            <button 
-                              onClick={() => handleRemoveStudent(student.id)}
-                              className="p-2 hover:bg-red rounded-lg transition-colors  group-hover:opacity-100 text-slate-400 hover:text-red-600"
-                              title="ដកសិស្សចេញ ពីថ្នាក់"
-                            >
-                              <Trash2 size={18} />
-                            </button>
+                            <div className="flex justify-end gap-2">
+                              <button 
+                                onClick={() => handleUpdate(student)}
+                                className="p-2 hover:bg-indigo-50 rounded-lg transition-colors group-hover:opacity-100 text-slate-400 hover:text-indigo-600"
+                                title="កែប្រែព័ត៌មាន"
+                              >
+                                <Edit size={18} />
+                              </button>
+                              <button 
+                                onClick={() => handleEditStatus(student)}
+                                className="p-2 hover:bg-emerald-50 rounded-lg transition-colors group-hover:opacity-100 text-slate-400 hover:text-emerald-600"
+                                title="កែប្រែស្ថានភាព"
+                              >
+                                <UserCog size={18} />
+                              </button>
+                              <button 
+                                onClick={() => handleRemoveStudent(student.id)}
+                                className="p-2 hover:bg-red-50 rounded-lg transition-colors group-hover:opacity-100 text-slate-400 hover:text-red-600"
+                                title="ដកសិស្សចេញ ពីថ្នាក់"
+                              >
+                                <Trash2 size={18} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -428,11 +545,19 @@ const ClassDetailViewTeacherPage = () => {
                     <div 
                       key={student.id} 
                       className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-2xl border border-slate-200 hover:border-indigo-200 transition-all group cursor-pointer"
-                      onClick={() => handleAddStudent(student.id)}
+                      onClick={() => handleAddStudent(student)}
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-sm">
-                          {student.first_name?.[0]}{student.last_name?.[0]}
+                        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold shadow-sm overflow-hidden relative">
+                          <span>{student.first_name?.[0]}{student.last_name?.[0]}</span>
+                          {student.image_profile && (
+                            <img 
+                              src={getImageUrl(student.image_profile)} 
+                              alt="" 
+                              className="w-full h-full object-cover absolute inset-0" 
+                              onError={(e) => e.target.style.display = 'none'}
+                            />
+                          )}
                         </div>
                         <div>
                           <h4 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">
@@ -472,6 +597,177 @@ const ClassDetailViewTeacherPage = () => {
               >
                 បោះបង់
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Status Update Modal */}
+      {isStatusModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in duration-200 relative">
+            
+            {/* Form Loading Overlay */}
+            {updatingStatus && (
+              <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-10">
+                <div className="bg-white p-3 rounded-full shadow-lg border border-gray-100">
+                  <Loader2 className="animate-spin text-indigo-600" size={24} />
+                </div>
+              </div>
+            )}
+
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-gray-900">កែប្រែស្ថានភាពសិស្ស</h3>
+              <button 
+                onClick={() => setIsStatusModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-1 hover:bg-gray-100 rounded-full"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleSaveStatus}>
+              <div className="p-6">
+                <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-lg shadow-sm shrink-0 overflow-hidden relative">
+                    <span>{studentToUpdate?.first_name?.[0]}{studentToUpdate?.last_name?.[0]}</span>
+                    {studentToUpdate?.image_profile && (
+                      <img 
+                        src={getImageUrl(studentToUpdate.image_profile)} 
+                        alt="" 
+                        className="w-full h-full object-cover absolute inset-0" 
+                        onError={(e) => e.target.style.display = 'none'}
+                      />
+                    )}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900">{studentToUpdate?.last_name} {studentToUpdate?.first_name}</h4>
+                    <p className="text-sm text-gray-500 font-mono">ID: {studentToUpdate?.student_code || studentToUpdate?.id || 'N/A'}</p>
+                  </div>
+                </div>
+
+                <label className="block text-sm font-medium text-gray-700 mb-2">ជ្រើសរើសស្ថានភាពថ្មី</label>
+                <div className="relative">
+                  <select
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value)}
+                    className="w-full pl-4 pr-10 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white appearance-none"
+                  >
+                    <option value="active">សកម្ម (Active)</option>
+                    <option value="suspended">ព្យួរឈ្មោះ (Suspended)</option>
+                    <option value="dropped_out">បោះបង់ការសិក្សា (Dropped Out)</option>
+                    <option value="transferred">ផ្លាស់ចេញ (Transferred)</option>
+                    <option value="graduated">បញ្ចប់ការសិក្សា (Graduated)</option>
+                    <option value="inactive">អសកម្ម (Inactive)</option>
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
+                </div>
+              </div>
+              
+              <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
+                <button
+                  type="button"
+                  onClick={() => setIsStatusModalOpen(false)}
+                  disabled={updatingStatus}
+                  className="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  បោះបង់
+                </button>
+                <button
+                  type="submit"
+                  disabled={updatingStatus}
+                  className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  <span>រក្សាទុក</span>
+                  {updatingStatus && <Loader2 className="animate-spin" size={16} />}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Update Student Modal */}
+      {isUpdateModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden animate-in zoom-in duration-200 relative max-h-[90vh] flex flex-col">
+            
+            {updating && (
+              <div className="absolute inset-0 bg-white/60 backdrop-blur-[1px] flex items-center justify-center z-10">
+                <div className="bg-white p-3 rounded-full shadow-lg border border-gray-100">
+                  <Loader2 className="animate-spin text-indigo-600" size={24} />
+                </div>
+              </div>
+            )}
+
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center shrink-0">
+              <h3 className="text-lg font-bold text-gray-900">កែប្រែព័ត៌មានសិស្ស</h3>
+              <button onClick={() => setIsUpdateModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-1 hover:bg-gray-100 rounded-full">
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">នាមត្រកូល *</label>
+                  <input type="text" name="last_name" value={updateData.last_name} onChange={handleUpdateChange} className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">នាមខ្លួន *</label>
+                  <input type="text" name="first_name" value={updateData.first_name} onChange={handleUpdateChange} className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">លេខទូរស័ព្ទ</label>
+                  <input type="tel" name="phone_number" value={updateData.phone_number} onChange={handleUpdateChange} className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ថ្ងៃកំណើត</label>
+                  <input type="date" name="date_of_birth" value={updateData.date_of_birth} onChange={handleUpdateChange} className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">ថ្ងៃចូលរៀន</label>
+                  <input type="date" name="enrollment_date" value={updateData.enrollment_date} onChange={handleUpdateChange} className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">រូបភាពប្រវត្តិរូប</label>
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-gray-100 border border-gray-200 overflow-hidden shrink-0 flex items-center justify-center relative">
+                      {selectedFile ? (
+                        <img src={URL.createObjectURL(selectedFile)} alt="Preview" className="w-full h-full object-cover absolute inset-0" />
+                      ) : (
+                        <>
+                          <User size={24} className="text-gray-400" />
+                          {updateData.image_profile && (
+                            <img 
+                              src={getImageUrl(updateData.image_profile)} 
+                              alt="Current" 
+                              className="w-full h-full object-cover absolute inset-0" 
+                              onError={(e) => e.target.style.display = 'none'}
+                            />
+                          )}
+                        </>
+                      )}
+                    </div>
+                    <label className="flex-1 cursor-pointer">
+                      <div className="w-full px-4 py-2 rounded-xl border border-dashed border-gray-300 hover:border-indigo-500 hover:bg-indigo-50 transition-colors flex items-center justify-center gap-2 text-gray-500">
+                        <Upload size={20} />
+                        <span>{selectedFile ? selectedFile.name : "ប្តូររូបភាព"}</span>
+                      </div>
+                      <input type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+                    </label>
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">អាសយដ្ឋាន</label>
+                  <textarea name="address" value={updateData.address} onChange={handleUpdateChange} className="w-full px-4 py-2 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 outline-none" rows="2"></textarea>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50 shrink-0">
+              <button onClick={() => setIsUpdateModalOpen(false)} disabled={updating} className="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-white transition-colors disabled:opacity-50">បោះបង់</button>
+              <button onClick={handleUpdateSubmit} disabled={updating} className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200 flex items-center gap-2 disabled:opacity-70"><span>រក្សាទុក</span>{updating && <Loader2 className="animate-spin" size={16} />}</button>
             </div>
           </div>
         </div>

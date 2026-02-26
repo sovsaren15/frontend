@@ -313,18 +313,19 @@ const CreateStudentTeacherPages = () => {
             {/* Footer Buttons */}
             <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
               <button
+                onClick={handleRegisterSubmit}
+                disabled={loading}
+                className="px-6 py-2.5 rounded-xl border border-indigo-600 bg-primary text-white font-semibold hover:bg-indigo-700 transition-all shadow-sm"
+              >
+                {loading && <Loader2 className="animate-spin w-4 h-4" />}
+                {loading ? 'កំពុងរក្សាទុក...' : 'រក្សាទុក'}
+              </button>
+
+                            <button
                 onClick={handleReset}
                 className="px-6 py-2.5 rounded-xl border border-red-600 bg-red-600 text-white font-semibold hover:bg-red-700 transition-all shadow-sm"
               >
                 សម្អាត
-              </button>
-              <button
-                onClick={handleRegisterSubmit}
-                disabled={loading}
-                className="px-6 py-2.5 rounded-xl border border-indigo-600 bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-all shadow-sm"
-              >
-                {loading && <Loader2 className="animate-spin w-4 h-4" />}
-                {loading ? 'កំពុងរក្សាទុក...' : 'រក្សាទុក'}
               </button>
             </div>
 

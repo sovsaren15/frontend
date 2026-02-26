@@ -41,7 +41,7 @@ const getImageUrl = (imagePath) => {
   if (imagePath.startsWith('http')) return imagePath;
   const normalizedPath = imagePath.replace(/\\/g, '/');
   const relativePath = normalizedPath.includes('uploads/') ? normalizedPath.substring(normalizedPath.indexOf('uploads/')) : normalizedPath;
-  return `http://localhost/primary_school_attendance/${relativePath}`;
+  return `http://localhost:8081/${relativePath}`;
 };
 
 const StudentTeacherPages = () => {
@@ -200,7 +200,8 @@ const StudentTeacherPages = () => {
     setIsStatusModalOpen(true);
   };
 
-  const handleSaveStatus = async () => {
+  const handleSaveStatus = async (e) => {
+    if (e) e.preventDefault();
     if (!studentToUpdate) return;
     
     setUpdatingStatus(true);
@@ -289,7 +290,7 @@ const StudentTeacherPages = () => {
 
   return (
     <div className="min-h-screen pb-10 font-kantumruy">
-      <div className="max-w-7xl mx-auto p-4 md:p-8 space-y-6">
+      <div className="mx-auto p-4 md:p-8 space-y-6">
         
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -304,7 +305,7 @@ const StudentTeacherPages = () => {
             
             <div className="flex gap-3">
               <button 
-                className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-medium shadow-sm hover:bg-indigo-700 transition-colors flex items-center gap-2"
+                className="px-5 py-2.5 bg-primary text-white rounded-xl font-medium shadow-sm hover:bg-indigo-700 transition-colors flex items-center gap-2"
                 onClick={() => setIsRegisterModalOpen(true)}
               >
                 <Plus size={20} />
@@ -520,6 +521,7 @@ const StudentTeacherPages = () => {
               </button>
             </div>
             
+            <form onSubmit={handleSaveStatus}>
             <div className="p-6">
               <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-xl border border-gray-100">
                 <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-lg overflow-hidden shrink-0">
@@ -539,6 +541,10 @@ const StudentTeacherPages = () => {
                   className="w-full pl-4 pr-10 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white appearance-none"
                 >
                   <option value="active">សកម្ម (Active)</option>
+                  <option value="suspended">ព្យួរឈ្មោះ (Suspended)</option>
+                  <option value="dropped_out">បោះបង់ការសិក្សា (Dropped Out)</option>
+                  <option value="transferred">ផ្លាស់ចេញ (Transferred)</option>
+                  <option value="graduated">បញ្ចប់ការសិក្សា (Graduated)</option>
                   <option value="inactive">អសកម្ម (Inactive)</option>
                 </select>
                 <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={18} />
@@ -547,6 +553,7 @@ const StudentTeacherPages = () => {
             
             <div className="p-6 border-t border-gray-100 flex justify-end gap-3 bg-gray-50">
               <button
+                type="button"
                 onClick={() => setIsStatusModalOpen(false)}
                 disabled={updatingStatus}
                 className="px-5 py-2.5 rounded-xl border border-gray-300 text-gray-700 font-medium hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -554,7 +561,7 @@ const StudentTeacherPages = () => {
                 បោះបង់
               </button>
               <button
-                onClick={handleSaveStatus}
+                type="submit"
                 disabled={updatingStatus}
                 className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-medium hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200 flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
               >
@@ -562,6 +569,7 @@ const StudentTeacherPages = () => {
                 {updatingStatus && <Loader2 className="animate-spin" size={16} />}
               </button>
             </div>
+            </form>
           </div>
         </div>
       )}

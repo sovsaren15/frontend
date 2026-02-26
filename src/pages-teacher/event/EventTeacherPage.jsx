@@ -11,7 +11,8 @@ import {
   Eye,
   ArrowLeft,
   LayoutList, 
-  LayoutGrid
+  LayoutGrid,
+  School
 } from "lucide-react";
 import { request } from "../../util/request";
 import toast from "react-hot-toast";
@@ -75,6 +76,13 @@ const EventTeacherPage = () => {
             </p>
           </div>
           <div className="flex gap-3">
+            <button
+              onClick={() => navigate('/teacher/schools')}
+              className="flex items-center gap-2 bg-primary hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl font-semibold transition-all shadow-sm hover:shadow-md"
+            >
+              <School size={20} />
+              <span>សាលារៀន</span>
+            </button>
             <button
               onClick={() => navigate(-1)}
               className="flex items-center gap-2 bg-gray-100 hover:bg-gray-200 text-gray-700 px-5 py-2.5 rounded-xl font-semibold transition-all"

@@ -7,15 +7,11 @@ import { request } from "../../util/request";
 const Navbar = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, message: "គ្រូថ្មី ៣ នាក់បានចុះឈ្មោះ", time: "២ នាទីមុន", unread: true },
-    { id: 2, message: "របាយការណ៍ប្រចាំខែត្រូវបានអាប់ដេត", time: "១៥ នាទីមុន", unread: true },
-    { id: 3, message: "ការប្រជុំគ្រូនឹងធ្វើនៅថ្ងៃស្អែក", time: "១ ម៉ោងមុន", unread: false }
-  ]);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const [schoolName, setSchoolName] = useState("ប្រព័ន្ធគ្រប់គ្រង បឋមសិក្សា");
   const [profileImage, setProfileImage] = useState(null);
-  const unreadCount = notifications.filter(n => n.unread).length;
 
   const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
@@ -51,6 +47,41 @@ const Navbar = () => {
     }
   }, [user]);
 
+  const fetchNotifications = async () => {
+    if (!user) return;
+    try {
+      const res = await request('/notifications', 'GET');
+      const data = res.data?.data || res.data;
+      if (data) {
+        setNotifications(data.notifications || []);
+        setUnreadCount(data.unreadCount || 0);
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+    // Poll every 30 seconds for real-time updates
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
+  const formatTimeAgo = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const seconds = Math.floor((now - date) / 1000);
+    
+    if (seconds < 60) return 'ថ្មីៗនេះ';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} នាទីមុន`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} ម៉ោងមុន`;
+    return date.toLocaleDateString('km-KH');
+  };
+
   const getImageUrl = (imagePath) => {
     if (!imagePath) return null;
     if (imagePath.startsWith('http')) return imagePath;
@@ -69,10 +100,36 @@ const Navbar = () => {
     setIsProfileOpen(false);
   };
 
-  const markAsRead = (id) => {
-    setNotifications(notifications.map(n => 
-      n.id === id ? { ...n, unread: false } : n
-    ));
+  const markAsRead = async (id) => {
+    try {
+      await request(`/notifications/${id}/read`, 'PUT');
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: 1 } : n));
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error("Failed to mark notification as read", error);
+    }
+  };
+
+  const handleNotificationItemClick = (notification) => {
+    markAsRead(notification.id);
+    try {
+      const parsed = JSON.parse(notification.message);
+      if (parsed.link) {
+        navigate(parsed.link);
+        setIsNotificationOpen(false);
+      }
+    } catch (e) {
+      // Not JSON or no link, just mark as read
+    }
+  };
+
+  const getNotificationText = (message) => {
+    try {
+      const parsed = JSON.parse(message);
+      return parsed.text || message;
+    } catch (e) {
+      return message;
+    }
   };
 
   if (loading || !user) {
@@ -226,18 +283,18 @@ const Navbar = () => {
                         <div
                             key={notification.id}
                             className={`p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors ${
-                            notification.unread ? 'bg-indigo-50/40' : ''
+                            !notification.is_read ? 'bg-indigo-50/40' : ''
                             }`}
-                            onClick={() => markAsRead(notification.id)}
+                            onClick={() => handleNotificationItemClick(notification)}
                         >
                             <div className="flex items-start justify-between gap-3">
                             <div className="flex-1">
-                                <p className={`text-sm mb-1 ${notification.unread ? 'font-bold text-gray-900' : 'text-gray-700'}`}>
-                                    {notification.message}
+                                <p className={`text-sm mb-1 ${!notification.is_read ? 'font-bold text-gray-900' : 'text-gray-700'}`}>
+                                    {getNotificationText(notification.message)}
                                 </p>
-                                <p className="text-xs text-gray-400">{notification.time}</p>
+                                <p className="text-xs text-gray-400">{formatTimeAgo(notification.created_at)}</p>
                             </div>
-                            {notification.unread && (
+                            {!notification.is_read && (
                                 <div className="w-2 h-2 bg-indigo-600 rounded-full mt-1.5 shrink-0"></div>
                             )}
                             </div>
